@@ -25,6 +25,7 @@
 		</dependency>
 
 		<dependency>
+		<!--  TODO: fix jdk10 tools   http://www.evosuite.org/documentation/maven-plugin/-->
 			<groupId>org.evosuite</groupId>
 			<artifactId>evosuite-standalone-runtime</artifactId>
 			<version>${evosuiteVersion}</version>
