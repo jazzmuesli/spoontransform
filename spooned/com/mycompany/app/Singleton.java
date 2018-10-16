@@ -19,7 +19,15 @@ public class Singleton implements com.mycompany.app.ISingleton {
     }
 
     private java.lang.String getName() {
-        return java.lang.Thread.currentThread().getName();
+        java.util.Properties props = new java.util.Properties();
+        try {
+            props.load(getClass().getResourceAsStream("app.properties"));
+        } catch (java.io.IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        java.lang.String name = props.getProperty("name");
+        return name;
     }
 
     @java.lang.Override

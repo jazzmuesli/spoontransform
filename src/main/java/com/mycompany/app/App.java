@@ -1,7 +1,9 @@
 package com.mycompany.app;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +42,15 @@ public class App {
 			LOG.info("doSomething");
 		}
 		private String getName() {
-			return Thread.currentThread().getName();
+			Properties props = new Properties();
+			try {
+				props.load(getClass().getResourceAsStream("app.properties"));
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			String name = props.getProperty("name");
+			return name;
 		}
 		
 		public long currentTime() {
@@ -57,8 +67,12 @@ public class App {
 	public static void main(String[] args) {
 		LOG.info("Hello, " + Singleton.getInstance().getUsefulInfo());
 
-		if (Singleton.getInstance().currentTime() > 0) {
-			LOG.info("Current time is always positive");
+		if ("Pavel".equals(Singleton.getInstance().getName())) {
+			if (Singleton.getInstance().currentTime() > 0) {
+				LOG.info("Current time is always positive");
+			} else {
+				LOG.info("non-positive");
+			}
 		}
 		Launcher launcher = new Launcher();
 
