@@ -36,6 +36,9 @@ public class App {
 		}
 		
 
+		public void doSomething() {
+			LOG.info("doSomething");
+		}
 		public String getUsefulInfo() {
 			return "Yes";
 		}

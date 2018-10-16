@@ -14,6 +14,11 @@ public class Singleton implements com.mycompany.app.ISingleton {
     }
 
     @java.lang.Override
+    public void doSomething() {
+        com.mycompany.app.App.LOG.info("doSomething");
+    }
+
+    @java.lang.Override
     public java.lang.String getUsefulInfo() {
         return "Yes";
     }
