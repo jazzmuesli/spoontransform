@@ -36,11 +36,14 @@ public class App {
 		}
 		
 
-		public void doSomething() {
+		public void doSomething() throws Exception{
 			LOG.info("doSomething");
 		}
+		private String getName() {
+			return Thread.currentThread().getName();
+		}
 		public String getUsefulInfo() {
-			return "Yes";
+			return "Yes, " + getName();
 		}
 		
 	}
@@ -81,7 +84,9 @@ public class App {
 					for (CtMethod<?> x : singletonClass.getMethods()) {
 						if (!x.isStatic() && !x.isPrivate()) {
 							LOG.info("x: " + x);							
-							intf.addMethod(x.clone());
+							CtMethod<?> intMethod = x.clone();
+							intMethod.getBody().delete();
+							intf.addMethod(intMethod);
 							getFactory().Annotation().annotate(x, Override.class);
 						}
 					}

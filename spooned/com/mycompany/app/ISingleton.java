@@ -2,12 +2,8 @@ package com.mycompany.app;
 
 
 public interface ISingleton {
-    public void doSomething() {
-        com.mycompany.app.App.LOG.info("doSomething");
-    }
+    public void doSomething() throws java.lang.Exception;
 
-    public java.lang.String getUsefulInfo() {
-        return "Yes";
-    }
+    public java.lang.String getUsefulInfo();
 }
 
