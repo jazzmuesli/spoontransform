@@ -25,7 +25,7 @@
 		</dependency>
 
 		<dependency>
-		<!--  TODO: fix jdk10 tools   http://www.evosuite.org/documentation/maven-plugin/-->
+			<!-- TODO: fix jdk10 tools http://www.evosuite.org/documentation/maven-plugin/ -->
 			<groupId>org.evosuite</groupId>
 			<artifactId>evosuite-standalone-runtime</artifactId>
 			<version>${evosuiteVersion}</version>
@@ -52,7 +52,25 @@
 						<target>1.8</target>
 					</configuration>
 				</plugin>
-
+				<plugin>
+					<groupId>org.jacoco</groupId>
+					<artifactId>jacoco-maven-plugin</artifactId>
+					<version>0.7.9</version>
+					<executions>
+						<execution>
+							<goals>
+								<goal>prepare-agent</goal>
+							</goals>
+						</execution>
+						<execution>
+							<id>generate-code-coverage-report</id>
+							<phase>test</phase>
+							<goals>
+								<goal>report</goal>
+							</goals>
+						</execution>
+					</executions>
+				</plugin>
 				<plugin>
 					<groupId>org.evosuite.plugins</groupId>
 					<artifactId>evosuite-maven-plugin</artifactId>
