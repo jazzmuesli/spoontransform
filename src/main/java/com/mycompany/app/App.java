@@ -86,7 +86,9 @@ public class App {
 							LOG.info("x: " + x);							
 							CtMethod<?> intMethod = x.clone();
 							intMethod.getBody().delete();
+							intMethod.removeModifier(ModifierKind.PUBLIC);
 							intf.addMethod(intMethod);
+							
 							getFactory().Annotation().annotate(x, Override.class);
 						}
 					}
