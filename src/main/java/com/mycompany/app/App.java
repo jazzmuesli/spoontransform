@@ -42,6 +42,10 @@ public class App {
 		private String getName() {
 			return Thread.currentThread().getName();
 		}
+		
+		public long currentTime() {
+			return System.currentTimeMillis();
+		}
 		public String getUsefulInfo() {
 			return "Yes, " + getName();
 		}
@@ -53,6 +57,9 @@ public class App {
 	public static void main(String[] args) {
 		LOG.info("Hello, " + Singleton.getInstance().getUsefulInfo());
 
+		if (Singleton.getInstance().currentTime() > 0) {
+			LOG.info("Current time is always positive");
+		}
 		Launcher launcher = new Launcher();
 
 		// path can be a folder or a file

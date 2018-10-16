@@ -23,6 +23,11 @@ public class Singleton implements com.mycompany.app.ISingleton {
     }
 
     @java.lang.Override
+    public long currentTime() {
+        return java.lang.System.currentTimeMillis();
+    }
+
+    @java.lang.Override
     public java.lang.String getUsefulInfo() {
         return "Yes, " + (getName());
     }
