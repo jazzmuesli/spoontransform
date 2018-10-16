@@ -11,6 +11,7 @@ import spoon.processing.AbstractProcessor;
 import spoon.reflect.CtModel;
 import spoon.reflect.code.CtCodeSnippetStatement;
 import spoon.reflect.declaration.*;
+import spoon.reflect.reference.CtExecutableReference;
 
 public class App {
 	interface MyInterface {
@@ -33,12 +34,18 @@ public class App {
 		public static Singleton getInstance() {
 			return instance;
 		}
+		
+
+		public String getUsefulInfo() {
+			return "Yes";
+		}
+		
 	}
 
 	private static final Logger LOG = LoggerFactory.getLogger(App.class);
 
 	public static void main(String[] args) {
-		LOG.info("Hello, " + Singleton.getInstance());
+		LOG.info("Hello, " + Singleton.getInstance().getUsefulInfo());
 
 		Launcher launcher = new Launcher();
 
@@ -64,14 +71,32 @@ public class App {
 					singletonClass.removeModifier(ModifierKind.STATIC);
 					singletonClass.addModifier(ModifierKind.PUBLIC);
 					singletonClass.setParent(element.getTopLevelType().getParent());
+					
+					// Let's extract an interface
+					CtInterface<Object> intf = getFactory().createInterface("I" + singletonClass.getSimpleName());
+					intf.addModifier(ModifierKind.PUBLIC);
+					for (CtMethod<?> x : singletonClass.getMethods()) {
+						if (!x.isStatic() && !x.isPrivate()) {
+							LOG.info("x: " + x);							
+							intf.addMethod(x.clone());
+							getFactory().Annotation().annotate(x, Override.class);
+						}
+					}
+					intf.setParent(singletonClass.getParent());
+					singletonClass.addSuperInterface(intf.getTypeErasure());
+					LOG.info("execs: " + singletonClass.getDeclaredExecutables());
 					types.add(element.getDeclaringType());
+					types.add(intf);
 					LOG.info("Private " + element);
 				}
 			}
 		});
 		LOG.info("types: " + types);
 		if (!types.isEmpty()) {
-			launcher.createOutputWriter().createJavaFile(types.get(0));			
+			for (CtType type : types) {
+				launcher.createOutputWriter().createJavaFile(type);
+			}
+						
 		}
 	}
 }

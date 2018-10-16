@@ -1,7 +1,7 @@
 package com.mycompany.app;
 
 
-public class Singleton {
+public class Singleton implements com.mycompany.app.ISingleton {
     private static final com.mycompany.app.App.Singleton instance = new com.mycompany.app.App.Singleton();
 
     public Singleton() {
@@ -11,6 +11,11 @@ public class Singleton {
 
     public static com.mycompany.app.App.Singleton getInstance() {
         return com.mycompany.app.App.Singleton.instance;
+    }
+
+    @java.lang.Override
+    public java.lang.String getUsefulInfo() {
+        return "Yes";
     }
 }
 
