@@ -8,6 +8,11 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.sourceforge.pmd.PMD;
+import net.sourceforge.pmd.PMDConfiguration;
+import net.sourceforge.pmd.RuleContext;
+import net.sourceforge.pmd.RuleSets;
+import net.sourceforge.pmd.SourceCodeProcessor;
 import spoon.Launcher;
 import spoon.processing.AbstractProcessor;
 import spoon.reflect.CtModel;
@@ -19,6 +24,7 @@ public class App {
 	interface MyInterface {
 		String getUsefulInfo();
 	}
+
 	static class MyGoodClass implements MyInterface {
 
 		public String getUsefulInfo() {
@@ -26,6 +32,7 @@ public class App {
 		}
 
 	}
+
 	static class Singleton {
 		private static final Singleton instance = new Singleton();
 
@@ -36,11 +43,11 @@ public class App {
 		public static Singleton getInstance() {
 			return instance;
 		}
-		
 
-		public void doSomething() throws Exception{
+		public void doSomething() throws Exception {
 			LOG.info("doSomething");
 		}
+
 		private String getName() {
 			Properties props = new Properties();
 			try {
@@ -49,17 +56,25 @@ public class App {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			String name = props.getProperty("name");
-			return name;
+
+			String name = "Unknown";
+			try {
+				name = props.getProperty("name");
+			} finally {
+				// Violation found by PMD
+				return name;
+			}
+
 		}
-		
+
 		public long currentTime() {
 			return System.currentTimeMillis();
 		}
+
 		public String getUsefulInfo() {
 			return "Yes, " + getName();
 		}
-		
+
 	}
 
 	private static final Logger LOG = LoggerFactory.getLogger(App.class);
@@ -74,6 +89,13 @@ public class App {
 				LOG.info("non-positive");
 			}
 		}
+
+		PMDConfiguration configuration = new PMDConfiguration();
+		net.sourceforge.pmd.SourceCodeProcessor processor = new SourceCodeProcessor(configuration);
+//		RuleContext ctx;
+//		RuleSets ruleSets;
+		PMD.main("-d src/main/java -f xml -R rulesets/java/basic.xml -version 1.8 -language java".split("\\s+"));
+//		processor.processSourceCode(sourceCode, ruleSets, ctx);
 		Launcher launcher = new Launcher();
 
 		// path can be a folder or a file
@@ -98,18 +120,18 @@ public class App {
 					singletonClass.removeModifier(ModifierKind.STATIC);
 					singletonClass.addModifier(ModifierKind.PUBLIC);
 					singletonClass.setParent(element.getTopLevelType().getParent());
-					
+
 					// Let's extract an interface
 					CtInterface<Object> intf = getFactory().createInterface("I" + singletonClass.getSimpleName());
 					intf.addModifier(ModifierKind.PUBLIC);
 					for (CtMethod<?> x : singletonClass.getMethods()) {
 						if (!x.isStatic() && !x.isPrivate()) {
-							LOG.info("x: " + x);							
+							LOG.info("x: " + x);
 							CtMethod<?> intMethod = x.clone();
 							intMethod.getBody().delete();
 							intMethod.removeModifier(ModifierKind.PUBLIC);
 							intf.addMethod(intMethod);
-							
+
 							getFactory().Annotation().annotate(x, Override.class);
 						}
 					}
@@ -127,7 +149,7 @@ public class App {
 			for (CtType type : types) {
 				launcher.createOutputWriter().createJavaFile(type);
 			}
-						
+
 		}
 	}
 }
