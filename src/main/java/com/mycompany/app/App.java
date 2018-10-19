@@ -109,9 +109,8 @@ public class App {
 			}
 		}
 
-		runPMD();
-//		PMD.main("-d src/main/java -f xml -R rulesets/java/basic.xml -version 1.8 -language java".split("\\s+"));
-
+		extractCodeMetricsUsingPMD();
+//		TODO: uncomment for debugging PMD.main("-d src/main/java -f xml -R rulesets/java/basic.xml -version 1.8 -language java".split("\\s+"));
 
 		runSpoon();
 	}
@@ -174,7 +173,7 @@ public class App {
 		}
 	}
 
-	private static void runPMD() {
+	private static void extractCodeMetricsUsingPMD() {
 		PMDConfiguration configuration = new PMDConfiguration();
 		configuration.setReportFormat("xml");
 		configuration.setInputPaths("src/main/java");
@@ -190,27 +189,30 @@ public class App {
 		try {
 			InputStream sourceCode;
 			sourceCode = new FileInputStream(sourceCodeFile);
-	        BufferedReader reader = new BufferedReader(new InputStreamReader(sourceCode));
-	        Parser parser = PMD.parserFor(version, configuration);
+			BufferedReader reader = new BufferedReader(new InputStreamReader(sourceCode));
+			Parser parser = PMD.parserFor(version, configuration);
 			ASTCompilationUnit compilationUnit = (ASTCompilationUnit) parser.parse(filename, reader);
-	        LOG.info("compilationUnit: " +compilationUnit);
+			LOG.info("compilationUnit: " + compilationUnit);
 
 			RuleSets ruleSets = new RuleSetFactory().createRuleSets("rulesets/java/design.xml");
 			processor.processSourceCode(sourceCode, ruleSets, ctx);
 
-	        List<ASTAnyTypeDeclaration> astClassOrInterfaceDeclarations = compilationUnit.findDescendantsOfType(ASTAnyTypeDeclaration.class);
-	        LOG.info("astClassOrInterfaceDeclarations: " + astClassOrInterfaceDeclarations);
-	        for (ASTAnyTypeDeclaration declaration : astClassOrInterfaceDeclarations) {
+			List<ASTAnyTypeDeclaration> astClassOrInterfaceDeclarations = compilationUnit
+					.findDescendantsOfType(ASTAnyTypeDeclaration.class);
+			LOG.info("astClassOrInterfaceDeclarations: " + astClassOrInterfaceDeclarations);
+			for (ASTAnyTypeDeclaration declaration : astClassOrInterfaceDeclarations) {
 				double metricValue = JavaMetrics.get(JavaClassMetricKey.NCSS, declaration);
-				LOG.info("for declaration: " + declaration.getImage() + ", metric: " + metricValue + ", lines: " + declaration.getBeginLine() + ":" + declaration.getEndLine());
-	        }
+				LOG.info("for declaration: " + declaration.getImage() + ", metric: " + metricValue + ", lines: "
+						+ declaration.getBeginLine() + ":" + declaration.getEndLine());
+			}
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		LOG.info("report: " + report);
 		for (RuleViolation viol : report) {
-			LOG.info("Violation in class " + viol.getPackageName() + "." + viol.getClassName() + " on lines " + viol.getBeginLine() + ":" + viol.getEndLine() + ", rule: " + viol.getRule());
+			LOG.info("Violation in class " + viol.getPackageName() + "." + viol.getClassName() + " on lines "
+					+ viol.getBeginLine() + ":" + viol.getEndLine() + ", rule: " + viol.getRule());
 		}
 		LOG.info("report.summary: " + report.getSummary());
 	}
