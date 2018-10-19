@@ -23,8 +23,10 @@ import net.sourceforge.pmd.RuleSetFactory;
 import net.sourceforge.pmd.RuleSets;
 import net.sourceforge.pmd.RuleViolation;
 import net.sourceforge.pmd.SourceCodeProcessor;
+import net.sourceforge.pmd.lang.LanguageVersion;
 import net.sourceforge.pmd.lang.Parser;
 import net.sourceforge.pmd.lang.ast.Node;
+import net.sourceforge.pmd.lang.java.JavaLanguageModule;
 import net.sourceforge.pmd.lang.java.ast.ASTAnyTypeDeclaration;
 import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceDeclaration;
 import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
@@ -107,9 +109,9 @@ public class App {
 			}
 		}
 
+		runPMD();
 //		PMD.main("-d src/main/java -f xml -R rulesets/java/basic.xml -version 1.8 -language java".split("\\s+"));
 
-		runPMD();
 
 		runSpoon();
 	}
@@ -175,6 +177,9 @@ public class App {
 	private static void runPMD() {
 		PMDConfiguration configuration = new PMDConfiguration();
 		configuration.setReportFormat("xml");
+		configuration.setInputPaths("src/main/java");
+		LanguageVersion version = new JavaLanguageModule().getVersion("1.8");
+		configuration.setDefaultLanguageVersion(version);
 		net.sourceforge.pmd.SourceCodeProcessor processor = new SourceCodeProcessor(configuration);
 		RuleContext ctx = new RuleContext();
 		File sourceCodeFile = new File("src/main/java/com/mycompany/app/App.java");
@@ -185,19 +190,20 @@ public class App {
 		try {
 			InputStream sourceCode;
 			sourceCode = new FileInputStream(sourceCodeFile);
+	        BufferedReader reader = new BufferedReader(new InputStreamReader(sourceCode));
+	        Parser parser = PMD.parserFor(version, configuration);
+			ASTCompilationUnit compilationUnit = (ASTCompilationUnit) parser.parse(filename, reader);
+	        LOG.info("compilationUnit: " +compilationUnit);
+
 			RuleSets ruleSets = new RuleSetFactory().createRuleSets("rulesets/java/design.xml");
 			processor.processSourceCode(sourceCode, ruleSets, ctx);
-	        Parser parser = PMD.parserFor(ctx.getLanguageVersion(), configuration);
 
-	        BufferedReader reader = new BufferedReader(new InputStreamReader(sourceCode));
-			ASTCompilationUnit x = (ASTCompilationUnit) parser.parse(filename, reader);
-	        LOG.info("x: " +x);
-//	        Node rootNode = parse(ctx, sourceCode, parser);
-
-//			ASTAnyTypeDeclaration node = null;
-	        List<ASTClassOrInterfaceDeclaration> xs = x.findChildrenOfType(ASTClassOrInterfaceDeclaration.class);
-	        LOG.info("xs: " + xs);
-//			JavaMetrics.get(JavaClassMetricKey.ATFD, x);
+	        List<ASTAnyTypeDeclaration> astClassOrInterfaceDeclarations = compilationUnit.findDescendantsOfType(ASTAnyTypeDeclaration.class);
+	        LOG.info("astClassOrInterfaceDeclarations: " + astClassOrInterfaceDeclarations);
+	        for (ASTAnyTypeDeclaration declaration : astClassOrInterfaceDeclarations) {
+				double metricValue = JavaMetrics.get(JavaClassMetricKey.NCSS, declaration);
+				LOG.info("for declaration: " + declaration.getImage() + ", metric: " + metricValue + ", lines: " + declaration.getBeginLine() + ":" + declaration.getEndLine());
+	        }
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
