@@ -26,8 +26,13 @@ public class Singleton implements com.mycompany.app.ISingleton {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
-        java.lang.String name = props.getProperty("name");
-        return name;
+        java.lang.String name = "Unknown";
+        try {
+            name = props.getProperty("name");
+        } finally {
+            // Violation found by PMD
+            return name;
+        }
     }
 
     @java.lang.Override

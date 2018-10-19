@@ -1,6 +1,12 @@
 package com.mycompany.app;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -10,9 +16,20 @@ import org.slf4j.LoggerFactory;
 
 import net.sourceforge.pmd.PMD;
 import net.sourceforge.pmd.PMDConfiguration;
+import net.sourceforge.pmd.Report;
 import net.sourceforge.pmd.RuleContext;
+import net.sourceforge.pmd.RuleSet;
+import net.sourceforge.pmd.RuleSetFactory;
 import net.sourceforge.pmd.RuleSets;
+import net.sourceforge.pmd.RuleViolation;
 import net.sourceforge.pmd.SourceCodeProcessor;
+import net.sourceforge.pmd.lang.Parser;
+import net.sourceforge.pmd.lang.ast.Node;
+import net.sourceforge.pmd.lang.java.ast.ASTAnyTypeDeclaration;
+import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceDeclaration;
+import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
+import net.sourceforge.pmd.lang.java.metrics.JavaMetrics;
+import net.sourceforge.pmd.lang.java.metrics.api.JavaClassMetricKey;
 import spoon.Launcher;
 import spoon.processing.AbstractProcessor;
 import spoon.reflect.CtModel;
@@ -90,12 +107,14 @@ public class App {
 			}
 		}
 
-		PMDConfiguration configuration = new PMDConfiguration();
-		net.sourceforge.pmd.SourceCodeProcessor processor = new SourceCodeProcessor(configuration);
-//		RuleContext ctx;
-//		RuleSets ruleSets;
-		PMD.main("-d src/main/java -f xml -R rulesets/java/basic.xml -version 1.8 -language java".split("\\s+"));
-//		processor.processSourceCode(sourceCode, ruleSets, ctx);
+//		PMD.main("-d src/main/java -f xml -R rulesets/java/basic.xml -version 1.8 -language java".split("\\s+"));
+
+		runPMD();
+
+		runSpoon();
+	}
+
+	private static void runSpoon() {
 		Launcher launcher = new Launcher();
 
 		// path can be a folder or a file
@@ -151,5 +170,42 @@ public class App {
 			}
 
 		}
+	}
+
+	private static void runPMD() {
+		PMDConfiguration configuration = new PMDConfiguration();
+		configuration.setReportFormat("xml");
+		net.sourceforge.pmd.SourceCodeProcessor processor = new SourceCodeProcessor(configuration);
+		RuleContext ctx = new RuleContext();
+		File sourceCodeFile = new File("src/main/java/com/mycompany/app/App.java");
+		String filename = sourceCodeFile.getAbsolutePath();
+		Report report = Report.createReport(ctx, filename);
+		ctx.setSourceCodeFile(sourceCodeFile);
+		ctx.setSourceCodeFilename(filename);
+		try {
+			InputStream sourceCode;
+			sourceCode = new FileInputStream(sourceCodeFile);
+			RuleSets ruleSets = new RuleSetFactory().createRuleSets("rulesets/java/design.xml");
+			processor.processSourceCode(sourceCode, ruleSets, ctx);
+	        Parser parser = PMD.parserFor(ctx.getLanguageVersion(), configuration);
+
+	        BufferedReader reader = new BufferedReader(new InputStreamReader(sourceCode));
+			ASTCompilationUnit x = (ASTCompilationUnit) parser.parse(filename, reader);
+	        LOG.info("x: " +x);
+//	        Node rootNode = parse(ctx, sourceCode, parser);
+
+//			ASTAnyTypeDeclaration node = null;
+	        List<ASTClassOrInterfaceDeclaration> xs = x.findChildrenOfType(ASTClassOrInterfaceDeclaration.class);
+	        LOG.info("xs: " + xs);
+//			JavaMetrics.get(JavaClassMetricKey.ATFD, x);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		LOG.info("report: " + report);
+		for (RuleViolation viol : report) {
+			LOG.info("Violation in class " + viol.getPackageName() + "." + viol.getClassName() + " on lines " + viol.getBeginLine() + ":" + viol.getEndLine() + ", rule: " + viol.getRule());
+		}
+		LOG.info("report.summary: " + report.getSummary());
 	}
 }
