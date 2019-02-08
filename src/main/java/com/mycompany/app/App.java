@@ -3,7 +3,6 @@ package com.mycompany.app;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -18,17 +17,14 @@ import net.sourceforge.pmd.PMD;
 import net.sourceforge.pmd.PMDConfiguration;
 import net.sourceforge.pmd.Report;
 import net.sourceforge.pmd.RuleContext;
-import net.sourceforge.pmd.RuleSet;
 import net.sourceforge.pmd.RuleSetFactory;
 import net.sourceforge.pmd.RuleSets;
 import net.sourceforge.pmd.RuleViolation;
 import net.sourceforge.pmd.SourceCodeProcessor;
 import net.sourceforge.pmd.lang.LanguageVersion;
 import net.sourceforge.pmd.lang.Parser;
-import net.sourceforge.pmd.lang.ast.Node;
 import net.sourceforge.pmd.lang.java.JavaLanguageModule;
 import net.sourceforge.pmd.lang.java.ast.ASTAnyTypeDeclaration;
-import net.sourceforge.pmd.lang.java.ast.ASTClassOrInterfaceDeclaration;
 import net.sourceforge.pmd.lang.java.ast.ASTCompilationUnit;
 import net.sourceforge.pmd.lang.java.metrics.JavaMetrics;
 import net.sourceforge.pmd.lang.java.metrics.api.JavaClassMetricKey;
@@ -36,8 +32,11 @@ import spoon.Launcher;
 import spoon.processing.AbstractProcessor;
 import spoon.reflect.CtModel;
 import spoon.reflect.code.CtCodeSnippetStatement;
-import spoon.reflect.declaration.*;
-import spoon.reflect.reference.CtExecutableReference;
+import spoon.reflect.declaration.CtConstructor;
+import spoon.reflect.declaration.CtInterface;
+import spoon.reflect.declaration.CtMethod;
+import spoon.reflect.declaration.CtType;
+import spoon.reflect.declaration.ModifierKind;
 
 public class App {
 	interface MyInterface {
@@ -72,8 +71,7 @@ public class App {
 			try {
 				props.load(getClass().getResourceAsStream("app.properties"));
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				LOG.error(e.getMessage(), e);
 			}
 
 			String name = "Unknown";
@@ -81,8 +79,8 @@ public class App {
 				name = props.getProperty("name");
 			} finally {
 				// Violation found by PMD
-				return name;
 			}
+			return name;
 
 		}
 
@@ -99,7 +97,7 @@ public class App {
 	private static final Logger LOG = LoggerFactory.getLogger(App.class);
 
 	public static void main(String[] args) {
-		LOG.info("Hello, " + Singleton.getInstance().getUsefulInfo());
+		LOG.info("Hello, {}", Singleton.getInstance().getUsefulInfo());
 
 		if ("Pavel".equals(Singleton.getInstance().getName())) {
 			if (Singleton.getInstance().currentTime() > 0) {
@@ -132,7 +130,7 @@ public class App {
 				if (element.getModifiers().contains(ModifierKind.PRIVATE)) {
 					element.addModifier(ModifierKind.PUBLIC);
 					element.removeModifier(ModifierKind.PRIVATE);
-					LOG.info("statements:" + element.getBody().getStatements());
+					LOG.info("statements: {}", element.getBody().getStatements());
 					CtCodeSnippetStatement snippet = getFactory().Core().createCodeSnippetStatement();
 					snippet.setValue("LOG.info(\"Empty private Singleton constructors are bad. Now it's public\")");
 					element.getBody().addStatement(snippet);
@@ -146,7 +144,7 @@ public class App {
 					intf.addModifier(ModifierKind.PUBLIC);
 					for (CtMethod<?> x : singletonClass.getMethods()) {
 						if (!x.isStatic() && !x.isPrivate()) {
-							LOG.info("x: " + x);
+							LOG.info("x: {}" , x);
 							CtMethod<?> intMethod = x.clone();
 							intMethod.getBody().delete();
 							intMethod.removeModifier(ModifierKind.PUBLIC);
@@ -157,14 +155,14 @@ public class App {
 					}
 					intf.setParent(singletonClass.getParent());
 					singletonClass.addSuperInterface(intf.getTypeErasure());
-					LOG.info("execs: " + singletonClass.getDeclaredExecutables());
+					LOG.info("execs: {}", singletonClass.getDeclaredExecutables());
 					types.add(element.getDeclaringType());
 					types.add(intf);
-					LOG.info("Private " + element);
+					LOG.info("Private {}", element);
 				}
 			}
 		});
-		LOG.info("types: " + types);
+		LOG.info("types: {}", types);
 		if (!types.isEmpty()) {
 			for (CtType type : types) {
 				launcher.createOutputWriter().createJavaFile(type);
@@ -186,34 +184,34 @@ public class App {
 		Report report = Report.createReport(ctx, filename);
 		ctx.setSourceCodeFile(sourceCodeFile);
 		ctx.setSourceCodeFilename(filename);
-		try {
-			InputStream sourceCode;
-			sourceCode = new FileInputStream(sourceCodeFile);
-			BufferedReader reader = new BufferedReader(new InputStreamReader(sourceCode));
-			Parser parser = PMD.parserFor(version, configuration);
-			ASTCompilationUnit compilationUnit = (ASTCompilationUnit) parser.parse(filename, reader);
-			LOG.info("compilationUnit: " + compilationUnit);
+		try (InputStream sourceCode = new FileInputStream(sourceCodeFile)){
+			
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(sourceCode))) {
+				Parser parser = PMD.parserFor(version, configuration);
+				ASTCompilationUnit compilationUnit = (ASTCompilationUnit) parser.parse(filename, reader);
+				LOG.info("compilationUnit: {}", compilationUnit);
 
-			RuleSets ruleSets = new RuleSetFactory().createRuleSets("rulesets/java/design.xml");
-			processor.processSourceCode(sourceCode, ruleSets, ctx);
+				RuleSets ruleSets = new RuleSetFactory().createRuleSets("rulesets/java/design.xml");
+				processor.processSourceCode(sourceCode, ruleSets, ctx);
 
-			List<ASTAnyTypeDeclaration> astClassOrInterfaceDeclarations = compilationUnit
-					.findDescendantsOfType(ASTAnyTypeDeclaration.class);
-			LOG.info("astClassOrInterfaceDeclarations: " + astClassOrInterfaceDeclarations);
-			for (ASTAnyTypeDeclaration declaration : astClassOrInterfaceDeclarations) {
-				double metricValue = JavaMetrics.get(JavaClassMetricKey.NCSS, declaration);
-				LOG.info("for declaration: " + declaration.getImage() + ", metric: " + metricValue + ", lines: "
-						+ declaration.getBeginLine() + ":" + declaration.getEndLine());
+				List<ASTAnyTypeDeclaration> astClassOrInterfaceDeclarations = compilationUnit
+						.findDescendantsOfType(ASTAnyTypeDeclaration.class);
+				LOG.info("astClassOrInterfaceDeclarations: " + astClassOrInterfaceDeclarations);
+				for (ASTAnyTypeDeclaration declaration : astClassOrInterfaceDeclarations) {
+					double metricValue = JavaMetrics.get(JavaClassMetricKey.NCSS, declaration);
+					LOG.info("for declaration: " + declaration.getImage() + ", metric: " + metricValue + ", lines: "
+							+ declaration.getBeginLine() + ":" + declaration.getEndLine());
+				}
+				
 			}
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			LOG.error(e.getMessage(), e);
 		}
-		LOG.info("report: " + report);
+		LOG.info("report: {}", report);
 		for (RuleViolation viol : report) {
 			LOG.info("Violation in class " + viol.getPackageName() + "." + viol.getClassName() + " on lines "
 					+ viol.getBeginLine() + ":" + viol.getEndLine() + ", rule: " + viol.getRule());
 		}
-		LOG.info("report.summary: " + report.getSummary());
+		LOG.info("report.summary: {}", report.getSummary());
 	}
 }
