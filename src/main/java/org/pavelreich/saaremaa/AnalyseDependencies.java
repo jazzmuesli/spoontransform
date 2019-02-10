@@ -30,6 +30,7 @@ import spoon.reflect.code.CtConstructorCall;
 import spoon.reflect.code.CtExpression;
 import spoon.reflect.code.CtFieldRead;
 import spoon.reflect.code.CtInvocation;
+import spoon.reflect.code.CtLocalVariable;
 import spoon.reflect.code.CtVariableRead;
 import spoon.reflect.cu.position.NoSourcePosition;
 import spoon.reflect.declaration.CtElement;
@@ -41,14 +42,14 @@ import spoon.reflect.reference.CtTypeReference;
 public class AnalyseDependencies {
 	private static final Logger LOG = LoggerFactory.getLogger(AnalyseDependencies.class);
 
-	public Map<String, MockOccurence> run(String path) {
+	public Map<String, ObjectCreationOccurence> run(String path) {
 		Launcher launcher = new Launcher();
 		launcher.addInputResource(path);
 
 		launcher.buildModel();
 
 		CtModel model = launcher.getModel();
-		final Map<String, MockOccurence> mocks = new HashMap();
+		final Map<String, ObjectCreationOccurence> objectsCreated = new HashMap();
 		model.processWith(new AbstractProcessor<CtElement>() {
 
 			@Override
@@ -71,7 +72,7 @@ public class AnalyseDependencies {
 						CtExpression type = ((CtFieldRead) element.getArguments().get(0)).getTarget();
 						Set<CtTypeReference<?>> x = type.getReferencedTypes();
 						CtTypeReference<?> mock = x.iterator().next();
-						mocks.put(simpleName, new MockOccurence(mock, element));
+						objectsCreated.put(simpleName, new ObjectCreationOccurence(mock, element, InstanceType.MOCKITO));
 						LOG.info("invocation [{}]={} args={} annotations={}", element.getClass(), element,
 								element.getArguments(), element.getAnnotations());
 					} catch (Exception e) {
@@ -99,7 +100,7 @@ public class AnalyseDependencies {
 			@Override
 			public void process(CtField element) {
 				if (element.getAnnotation(Mock.class) != null) {
-					mocks.put(element.getSimpleName(), new MockOccurence(element.getType(), element));
+					objectsCreated.put(element.getSimpleName(), new ObjectCreationOccurence(element.getType(), element, InstanceType.MOCKITO));
 					LOG.info("field [{}]={} annotations={}", element.getClass(), element,
 							element.getAnnotation(Mock.class));
 				}
@@ -110,10 +111,16 @@ public class AnalyseDependencies {
 
 		model.processWith(new AbstractProcessor<CtConstructorCall>() {
 			public void process(CtConstructorCall element) {
+				CtElement parent = element.getParent();
+				String name = "unknown";
+				if (parent instanceof CtNamedElement) {
+					name = ((CtNamedElement) parent).getSimpleName();
+				}
+				objectsCreated.put(name, new ObjectCreationOccurence(element.getType(), element, InstanceType.REAL));
 				if (!element.getArguments().isEmpty() && element.getArguments().get(0) instanceof CtVariableRead) {
 					CtVariableRead read = (CtVariableRead) element.getArguments().get(0);
 					CtPath path = read.getPath();
-					if (mocks.containsKey(read.getVariable().getSimpleName())) {
+					if (objectsCreated.containsKey(read.getVariable().getSimpleName())) {
 						LOG.info("constructor [{}]={}, args={} path={}",
 								new Object[] { element.getClass(), element, element.getArguments(), path });
 					}
@@ -123,8 +130,8 @@ public class AnalyseDependencies {
 			}
 		});
 
-		mocks.entrySet().stream().forEach(e -> LOG.info("Mock " + e.getKey() + " of type " + e.getValue()));
-		return mocks;
+		objectsCreated.entrySet().stream().forEach(e -> LOG.info("Object " + e.getKey() + " of type " + e.getValue()));
+		return objectsCreated;
 	}
 
 	private static String toString(GROUMNode node) {
@@ -172,7 +179,7 @@ public class AnalyseDependencies {
 			if (args.length != 1) {
 				throw new IllegalArgumentException("Usage: directory");
 			}
-			fw.write("mockName,mockClass,file,position,rootPath\n");
+			fw.write("objectType,objectName,objectClass,file,position,rootPath\n");
 			Path rootPath = Paths.get(args[0]);
 			Files.walk(rootPath)
 					.filter(f -> f.toFile().isDirectory() & f.toFile().getAbsolutePath().endsWith("src/test"))
@@ -187,10 +194,10 @@ public class AnalyseDependencies {
 		LOG.info("path: " + path);
 
 		try {
-			Map<String, MockOccurence> mocks = new AnalyseDependencies().run(path.toFile().getAbsolutePath());
+			Map<String, ObjectCreationOccurence> mocks = new AnalyseDependencies().run(path.toFile().getAbsolutePath());
 			mocks.entrySet().forEach(e -> {
 				try {
-					MockOccurence mockOc = e.getValue();
+					ObjectCreationOccurence mockOc = e.getValue();
 					fw.write(e.getKey() + "," + mockOc.toCSV() + "," + path.toFile().getAbsolutePath() + "\n");
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block
@@ -206,13 +213,15 @@ public class AnalyseDependencies {
 		}
 	}
 
-	static class MockOccurence {
+	static class ObjectCreationOccurence {
 		private CtElement element;
 		private CtTypeReference typeRef;
+		private InstanceType instanceType;
 
-		public MockOccurence(CtTypeReference mock, CtElement element) {
+		public ObjectCreationOccurence(CtTypeReference mock, CtElement element, InstanceType instanceType) {
 			this.typeRef = mock;
 			this.element = element;
+			this.instanceType = instanceType;
 		}
 
 		public String toCSV() {
@@ -224,7 +233,7 @@ public class AnalyseDependencies {
 			} catch (Exception e) {
 				LOG.error(e.getMessage(), e);
 			}
-			return typeRef.toString() + "," + absolutePath + "," + line;
+			return instanceType + "," + typeRef.toString() + "," + absolutePath + "," + line;
 		}
 
 		private String getAbsolutePath() {
@@ -240,4 +249,8 @@ public class AnalyseDependencies {
 			return "[type=" + typeRef + ", element.position=" + element.getPosition() + "]";
 		}
 	}
+
+	static enum InstanceType {
+		REAL, MOCKITO
+	};
 }
