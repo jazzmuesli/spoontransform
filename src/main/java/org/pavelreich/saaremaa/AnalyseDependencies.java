@@ -18,14 +18,15 @@ import org.slf4j.LoggerFactory;
 import spoon.Launcher;
 import spoon.processing.AbstractProcessor;
 import spoon.reflect.CtModel;
+import spoon.reflect.code.CtAssignment;
 import spoon.reflect.code.CtConstructorCall;
 import spoon.reflect.code.CtExpression;
 import spoon.reflect.code.CtFieldRead;
 import spoon.reflect.code.CtInvocation;
-import spoon.reflect.code.CtLocalVariable;
 import spoon.reflect.code.CtVariableRead;
 import spoon.reflect.declaration.CtElement;
 import spoon.reflect.declaration.CtField;
+import spoon.reflect.declaration.CtNamedElement;
 import spoon.reflect.path.CtPath;
 import spoon.reflect.reference.CtTypeReference;
 
@@ -59,8 +60,7 @@ public class AnalyseDependencies {
 				/* && element.getExecutable().toString().contains("mock") */) {
 					String elType = element.getTarget().toString();
 					try {
-						CtElement parent = element.getParent();// TODO: fix types, etc.
-						String simpleName = ((CtLocalVariable) parent).getSimpleName();
+						String simpleName = getSimpleName(element);
 						CtExpression type = ((CtFieldRead) element.getArguments().get(0)).getTarget();
 						Set<CtTypeReference<?>> x = type.getReferencedTypes();
 						CtTypeReference<?> mock = x.iterator().next();
@@ -73,6 +73,16 @@ public class AnalyseDependencies {
 					}
 				}
 
+			}
+
+			private String getSimpleName(CtInvocation element) {
+				if (element instanceof CtAssignment) {
+					CtExpression x = ((CtAssignment)element).getAssignment();
+					return x.toString();
+				}
+				CtElement parent = element.getParent();// TODO: fix types, etc.
+				String simpleName = ((CtNamedElement) parent).getSimpleName();
+				return simpleName;
 			}
 
 		});
@@ -111,15 +121,15 @@ public class AnalyseDependencies {
 	}
 
 	public static void main(String[] args) {
-		try (FileWriter fw = new FileWriter("output.csv")){
+		try (FileWriter fw = new FileWriter("output.csv")) {
 			if (args.length != 1) {
 				throw new IllegalArgumentException("Usage: directory");
 			}
 			fw.write("mockName,mockClass,file,position\n");
 			Files.walk(Paths.get(args[0]))
 					.filter(f -> f.toFile().isDirectory() & f.toFile().getAbsolutePath().endsWith("src/test"))
-					.forEach(path ->  processPath(fw, path));
-			
+					.forEach(path -> processPath(fw, path));
+
 		} catch (IOException e) {
 			LOG.error(e.getMessage(), e);
 		}
@@ -127,10 +137,9 @@ public class AnalyseDependencies {
 
 	private static void processPath(FileWriter fw, Path x) {
 		LOG.info("path: " + x);
-		
+
 		try {
-			Map<String, MockOccurence> mocks = new AnalyseDependencies()
-					.run(x.toFile().getAbsolutePath());
+			Map<String, MockOccurence> mocks = new AnalyseDependencies().run(x.toFile().getAbsolutePath());
 			mocks.entrySet().forEach(e -> {
 				try {
 					MockOccurence mockOc = e.getValue();
@@ -156,8 +165,15 @@ public class AnalyseDependencies {
 		}
 
 		public String toCSV() {
-			return typeRef.toString() + "," + element.getPosition().getFile().getAbsolutePath() + ","
-					+ typeRef.getPosition().getLine();
+			Integer line = null;
+			String absolutePath = null;
+			try {
+				absolutePath = element.getPosition().getFile().getAbsolutePath();
+				line = typeRef.getPosition().getLine();
+			} catch (Exception e) {
+				LOG.error(e.getMessage(), e);
+			}
+			return typeRef.toString() + "," + absolutePath + "," + line;
 		}
 
 		@Override
