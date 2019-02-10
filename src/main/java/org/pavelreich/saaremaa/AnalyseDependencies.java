@@ -7,14 +7,21 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.mockito.Mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import graphics.DotGraph;
+import groum.GROUMBuilder;
+import groum.GROUMGraph;
+import groum.GROUMNode;
 import spoon.Launcher;
 import spoon.processing.AbstractProcessor;
 import spoon.reflect.CtModel;
@@ -24,6 +31,7 @@ import spoon.reflect.code.CtExpression;
 import spoon.reflect.code.CtFieldRead;
 import spoon.reflect.code.CtInvocation;
 import spoon.reflect.code.CtVariableRead;
+import spoon.reflect.cu.position.NoSourcePosition;
 import spoon.reflect.declaration.CtElement;
 import spoon.reflect.declaration.CtField;
 import spoon.reflect.declaration.CtNamedElement;
@@ -38,7 +46,6 @@ public class AnalyseDependencies {
 		launcher.addInputResource(path);
 
 		launcher.buildModel();
-		List<String> xsds = new ArrayList<String>();
 
 		CtModel model = launcher.getModel();
 		final Map<String, MockOccurence> mocks = new HashMap();
@@ -77,7 +84,7 @@ public class AnalyseDependencies {
 
 			private String getSimpleName(CtInvocation element) {
 				if (element instanceof CtAssignment) {
-					CtExpression x = ((CtAssignment)element).getAssignment();
+					CtExpression x = ((CtAssignment) element).getAssignment();
 					return x.toString();
 				}
 				CtElement parent = element.getParent();// TODO: fix types, etc.
@@ -107,8 +114,8 @@ public class AnalyseDependencies {
 					CtVariableRead read = (CtVariableRead) element.getArguments().get(0);
 					CtPath path = read.getPath();
 					if (mocks.containsKey(read.getVariable().getSimpleName())) {
-						LOG.info("constructor [{}]={}, args={} path={}", element.getClass(), element,
-								element.getArguments(), path);
+						LOG.info("constructor [{}]={}, args={} path={}",
+								new Object[] { element.getClass(), element, element.getArguments(), path });
 					}
 
 				}
@@ -120,7 +127,47 @@ public class AnalyseDependencies {
 		return mocks;
 	}
 
+	private static String toString(GROUMNode node) {
+		String nodeLabel = (String) GROUMNode.labelOfID.get(Integer.valueOf(node.getClassNameId()));
+		String nodeLabelObj = (String) GROUMNode.labelOfID.get(Integer.valueOf(node.getObjectNameId()));
+		StringBuilder s = new StringBuilder()
+				.append((new StringBuilder("node ")).append(node.getId()).append(" with label:").append(nodeLabel)
+						.append(".").append(nodeLabelObj).append(".").append(node.getMethod()));
+//		return node.getClassName() + "::" + node.getMethod() + "[" + node.getLabel() + "]";
+		return node.getLabel();
+//						.append(" - ");
+//						.append(node.getMethodID()).append(" - ").append(node.getLabel()).toString());
+//		return s.toString();
+	}
+
 	public static void main(String[] args) {
+		runMockAnalysis(args);
+//		String path = "/Users/preich/Documents/github/evosuite/client/src/test/java/org/evosuite/junit/naming/methods/TestCoverageGoalNameGeneration.java";
+//		path = "/Users/preich/Documents/github/spoontransform/src/test/java/com/mycompany/app/MockTesting.java";
+//		runGroom(path);
+
+	}
+
+	private static void runGroom(String path) {
+		GROUMBuilder gb = new GROUMBuilder(path);
+		gb.build();
+		GROUMGraph groum;
+		DotGraph.EXEC_DOT = System.getProperty("dot.path", "dot");
+		Iterator iterator = gb.getGroums().iterator();
+		while (iterator.hasNext()) {
+			groum = (GROUMGraph) iterator.next();
+			HashSet<GROUMNode> nodes = groum.getNodes();
+//			nodes.forEach(n -> LOG.info("node: " + toString(n)));
+			groum.toGraphics("/tmp/");
+			List<Object> xs = nodes.stream()
+					.flatMap(x -> x.getOutEdges().stream().map(e -> toString(x) + " => " + toString(e.getDest())))
+					.collect(Collectors.toList());
+			xs.forEach(s -> LOG.info("edge: " + String.valueOf(s)));
+			LOG.info("nodes: " + nodes);
+		}
+	}
+
+	private static void runMockAnalysis(String[] args) {
 		try (FileWriter fw = new FileWriter("output.csv")) {
 			if (args.length != 1) {
 				throw new IllegalArgumentException("Usage: directory");
@@ -150,6 +197,9 @@ public class AnalyseDependencies {
 					e1.printStackTrace();
 				}
 			});
+			if (!mocks.isEmpty()) {
+				mocks.values().stream().map(x -> x.getAbsolutePath()).filter(p -> p != null).forEach(x -> runGroom(x));
+			}
 			fw.flush();
 		} catch (Exception e) {
 			LOG.error(e.getMessage(), e);
@@ -169,12 +219,20 @@ public class AnalyseDependencies {
 			Integer line = null;
 			String absolutePath = null;
 			try {
-				absolutePath = element.getPosition().getFile().getAbsolutePath();
-				line = typeRef.getPosition().getLine();
+				absolutePath = getAbsolutePath();
+				line = typeRef.getPosition() instanceof NoSourcePosition ? null : typeRef.getPosition().getLine();
 			} catch (Exception e) {
 				LOG.error(e.getMessage(), e);
 			}
 			return typeRef.toString() + "," + absolutePath + "," + line;
+		}
+
+		private String getAbsolutePath() {
+			try {
+				return element.getPosition().getFile().getAbsolutePath();
+			} catch (Exception e) {
+				return null;
+			}
 		}
 
 		@Override

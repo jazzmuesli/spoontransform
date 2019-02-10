@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -77,6 +78,17 @@ public class MockTesting {
 		MyTCPClient tcpClient = new MyTCPClient(socket);
 		MyAPIClient apiClient = new MyAPIClient(tcpClient);
 		assertEquals(1.14, apiClient.provideFxRate("GBPEUR"), 1e-6);
+	}
+	
+	@Test
+	public void testCreation() {
+		Socket socket = new Socket();
+		MyTCPClient tcpClient = new MyTCPClient(socket);
+		MyAPIClient apiClient = new MyAPIClient(tcpClient);
+		List<MyAPIClient> list = new ArrayList();
+		list.add(apiClient);
+		HashSet<MyAPIClient> set = new HashSet<MyAPIClient>(list);
+		
 	}
 	static  class  Wrapper1<T> {
 		private List<T> slist;
