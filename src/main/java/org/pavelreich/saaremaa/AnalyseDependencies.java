@@ -3,6 +3,7 @@ package org.pavelreich.saaremaa;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -33,9 +34,6 @@ public class AnalyseDependencies {
 
 	public Map<String, MockOccurence> run(String path) {
 		Launcher launcher = new Launcher();
-
-//		launcher.addInputResource("src/main");
-//		launcher.addInputResource("src/test");
 		launcher.addInputResource(path);
 
 		launcher.buildModel();
@@ -113,36 +111,38 @@ public class AnalyseDependencies {
 	}
 
 	public static void main(String[] args) {
-		try {
+		try (FileWriter fw = new FileWriter("output.csv")){
 			if (args.length != 1) {
 				throw new IllegalArgumentException("Usage: directory");
 			}
-			FileWriter fw = new FileWriter("output.csv");
 			fw.write("mockName,mockClass,file,position\n");
 			Files.walk(Paths.get(args[0]))
 					.filter(f -> f.toFile().isDirectory() & f.toFile().getAbsolutePath().endsWith("src/test"))
-					.forEach(x -> {
-						LOG.info("path: " + x);
-						try {
-							Map<String, MockOccurence> mocks = new AnalyseDependencies()
-									.run(x.toFile().getAbsolutePath());
-							mocks.entrySet().forEach(e -> {
-								try {
-									MockOccurence mockOc = e.getValue();
-									fw.write(e.getKey() + "," + mockOc.toCSV() + "\n");
-								} catch (IOException e1) {
-									// TODO Auto-generated catch block
-									e1.printStackTrace();
-								}
-							});
-						} catch (Exception e) {
-							LOG.error(e.getMessage(), e);
-						}
-					});
-			fw.close();
+					.forEach(path ->  processPath(fw, path));
+			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			LOG.error(e.getMessage(), e);
+		}
+	}
+
+	private static void processPath(FileWriter fw, Path x) {
+		LOG.info("path: " + x);
+		
+		try {
+			Map<String, MockOccurence> mocks = new AnalyseDependencies()
+					.run(x.toFile().getAbsolutePath());
+			mocks.entrySet().forEach(e -> {
+				try {
+					MockOccurence mockOc = e.getValue();
+					fw.write(e.getKey() + "," + mockOc.toCSV() + "\n");
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			});
+			fw.flush();
+		} catch (Exception e) {
+			LOG.error(e.getMessage(), e);
 		}
 	}
 
