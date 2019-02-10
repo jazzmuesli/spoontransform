@@ -125,25 +125,26 @@ public class AnalyseDependencies {
 			if (args.length != 1) {
 				throw new IllegalArgumentException("Usage: directory");
 			}
-			fw.write("mockName,mockClass,file,position\n");
-			Files.walk(Paths.get(args[0]))
+			fw.write("mockName,mockClass,file,position,rootPath\n");
+			Path rootPath = Paths.get(args[0]);
+			Files.walk(rootPath)
 					.filter(f -> f.toFile().isDirectory() & f.toFile().getAbsolutePath().endsWith("src/test"))
-					.forEach(path -> processPath(fw, path));
+					.forEach(path -> processPath(fw, path, rootPath));
 
 		} catch (IOException e) {
 			LOG.error(e.getMessage(), e);
 		}
 	}
 
-	private static void processPath(FileWriter fw, Path x) {
-		LOG.info("path: " + x);
+	private static void processPath(FileWriter fw, Path path, Path rootPath) {
+		LOG.info("path: " + path);
 
 		try {
-			Map<String, MockOccurence> mocks = new AnalyseDependencies().run(x.toFile().getAbsolutePath());
+			Map<String, MockOccurence> mocks = new AnalyseDependencies().run(path.toFile().getAbsolutePath());
 			mocks.entrySet().forEach(e -> {
 				try {
 					MockOccurence mockOc = e.getValue();
-					fw.write(e.getKey() + "," + mockOc.toCSV() + "\n");
+					fw.write(e.getKey() + "," + mockOc.toCSV() + "," + path.toFile().getAbsolutePath() + "\n");
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
