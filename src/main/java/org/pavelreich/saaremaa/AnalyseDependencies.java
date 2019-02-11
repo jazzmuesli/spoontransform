@@ -204,7 +204,7 @@ public class AnalyseDependencies {
 					e1.printStackTrace();
 				}
 			});
-			if (!mocks.isEmpty()) {
+			if (!mocks.isEmpty() && Boolean.valueOf(System.getProperty("enable.groom","true"))) {
 				mocks.values().stream().map(x -> x.getAbsolutePath()).filter(p -> p != null).forEach(x -> runGroom(x));
 			}
 			fw.flush();
