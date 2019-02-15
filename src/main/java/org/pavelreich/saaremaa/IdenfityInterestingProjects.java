@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 /**
@@ -29,6 +30,7 @@ public class IdenfityInterestingProjects {
 		boolean powermock = false;
 		boolean mockito = false;
 		boolean easymock = false;
+		boolean junit = false;
 		int classes = 0;
 		try {
 			ZipFile zf = new ZipFile(fileName);
@@ -37,20 +39,18 @@ public class IdenfityInterestingProjects {
 				List<String> lines = null;
 				if (x.getName().contains("build.gradle")) {
 					gradle = true;
+					lines = readLines(zf, x);
 				}
 				if (x.getName().contains("pom.xml")) {
 					pom = true;
-				}
-				if (gradle || pom) {
-					InputStream is = zf.getInputStream(x);
-					lines = new BufferedReader(new InputStreamReader(is)).lines().collect(Collectors.toList());
-					is.close();
+					lines = readLines(zf, x);
 				}
 				if (lines != null) {
-					jacoco = isSomethingInside(lines, "jacoco-maven-plugin");
+					jacoco = isSomethingInside(lines, "jacoco");
 					powermock = isSomethingInside(lines, "powermock");
 					mockito = isSomethingInside(lines, "mockito");
 					easymock = isSomethingInside(lines, "easymock");
+					junit = isSomethingInside(lines, "junit");
 				}
 				if (x.getName().contains("Test.java")) {
 					tests++;
@@ -64,7 +64,15 @@ public class IdenfityInterestingProjects {
 			e.printStackTrace();
 		}
 		return fileName + "," + pom + "," + gradle + "," + tests + "," + classes + "," + jacoco + "," + powermock + ","
-				+ mockito + "," + easymock;
+				+ mockito + "," + easymock + "," + junit;
+	}
+
+	private static List<String> readLines(ZipFile zf, ZipEntry x) throws IOException {
+		List<String> lines;
+		InputStream is = zf.getInputStream(x);
+		lines = new BufferedReader(new InputStreamReader(is)).lines().collect(Collectors.toList());
+		is.close();
+		return lines;
 	}
 
 
@@ -72,7 +80,7 @@ public class IdenfityInterestingProjects {
 		var zipFiles = java.nio.file.Files.walk(java.nio.file.Paths.get(".")).filter(p -> p.toFile().toString().endsWith(".zip")).collect(Collectors.toList());
 
 		FileWriter fw = new FileWriter("suitable-projects.csv");
-		fw.write("filename,pom,gradle,tests,classes,jacoco,powermock,mockito,easymock\n");
+		fw.write("filename,pom,gradle,tests,classes,jacoco,powermock,mockito,easymock,junit\n");
 		var goodFiles = zipFiles.parallelStream().map(x -> {
 			try {
 				String md = extractMetaData(x.toString());
