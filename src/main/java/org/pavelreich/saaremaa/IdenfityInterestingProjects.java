@@ -25,9 +25,10 @@ public class IdenfityInterestingProjects {
 	
 	static String extractMetaData(String fileName) {
 		boolean pom = false;
-		boolean tests = false;
+		int tests = 0;
 		boolean jacoco = false;
 		boolean gradle = false;
+		int classes = 0;
 		try {
 			ZipFile zf = new ZipFile(fileName);
 			var files = zf.stream().collect(Collectors.toList());
@@ -41,14 +42,17 @@ public class IdenfityInterestingProjects {
 					jacoco = isJacocoInside(is);
 				}
 				if (x.getName().contains("Test.java")) {
-					tests = true;
+					tests++;
+				} 
+				if (x.getName().endsWith(".java")) {
+					classes++;
 				}
 			}
 			zf.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return fileName + "," + pom + "," + gradle + "," + tests + "," + jacoco;
+		return fileName + "," + pom + "," + gradle + "," + tests + "," + classes + "," + jacoco;
 	}
 
 
@@ -56,8 +60,7 @@ public class IdenfityInterestingProjects {
 		var zipFiles = java.nio.file.Files.walk(java.nio.file.Paths.get(".")).filter(p -> p.toFile().toString().endsWith(".zip")).collect(Collectors.toList());
 
 		FileWriter fw = new FileWriter("suitable-projects.csv");
-		fw.write("filename,pom,gradle,tests,jacoco\n");
-		// names(data)=c("filename","pom","gradle","tests","jacoco")
+		fw.write("filename,pom,gradle,tests,classes,jacoco\n");
 		var goodFiles = zipFiles.parallelStream().map(x -> {
 			try {
 				String md = extractMetaData(x.toString());
