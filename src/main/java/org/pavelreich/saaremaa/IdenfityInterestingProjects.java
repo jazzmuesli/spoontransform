@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -34,8 +35,8 @@ public class IdenfityInterestingProjects {
 		int classes = 0;
 		try {
 			ZipFile zf = new ZipFile(fileName);
-			var files = zf.stream().collect(Collectors.toList());
-			for (var x : files) {
+			List<? extends ZipEntry> files = zf.stream().collect(Collectors.toList());
+			for (ZipEntry x : files) {
 				List<String> lines = null;
 				if (x.getName().contains("build.gradle")) {
 					gradle = true;
@@ -77,11 +78,11 @@ public class IdenfityInterestingProjects {
 
 
 	public static void main(String[] args) throws IOException {
-		var zipFiles = java.nio.file.Files.walk(java.nio.file.Paths.get(".")).filter(p -> p.toFile().toString().endsWith(".zip")).collect(Collectors.toList());
+		 List<Path> zipFiles = java.nio.file.Files.walk(java.nio.file.Paths.get(".")).filter(p -> p.toFile().toString().endsWith(".zip")).collect(Collectors.toList());
 
 		FileWriter fw = new FileWriter("suitable-projects.csv");
 		fw.write("filename,pom,gradle,tests,classes,jacoco,powermock,mockito,easymock,junit\n");
-		var goodFiles = zipFiles.parallelStream().map(x -> {
+		 List<Path> goodFiles = zipFiles.parallelStream().map(x -> {
 			try {
 				String md = extractMetaData(x.toString());
 				fw.write(md+"\n");
