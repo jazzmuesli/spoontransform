@@ -5,6 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
@@ -15,11 +16,8 @@ import java.util.zip.ZipFile;
  */
 public class IdenfityInterestingProjects {
 
-	private static boolean isJacocoInside(InputStream is) throws IOException {
-		String pluginName = "jacoco-maven-plugin";
-		//final String pluginName = "maven-shade-plugin";
-		long count = new BufferedReader(new InputStreamReader(is)).lines().filter(s->s.contains(pluginName)).count();
-		is.close();
+	private static boolean isSomethingInside(List<String> lines, String mask) throws IOException {
+		long count = lines.stream().filter(s->s.toLowerCase().contains(mask)).count();
 		return count > 0;
 	}
 	
@@ -28,18 +26,31 @@ public class IdenfityInterestingProjects {
 		int tests = 0;
 		boolean jacoco = false;
 		boolean gradle = false;
+		boolean powermock = false;
+		boolean mockito = false;
+		boolean easymock = false;
 		int classes = 0;
 		try {
 			ZipFile zf = new ZipFile(fileName);
 			var files = zf.stream().collect(Collectors.toList());
 			for (var x : files) {
+				List<String> lines = null;
 				if (x.getName().contains("build.gradle")) {
 					gradle = true;
 				}
 				if (x.getName().contains("pom.xml")) {
 					pom = true;
+				}
+				if (gradle || pom) {
 					InputStream is = zf.getInputStream(x);
-					jacoco = isJacocoInside(is);
+					lines = new BufferedReader(new InputStreamReader(is)).lines().collect(Collectors.toList());
+					is.close();
+				}
+				if (lines != null) {
+					jacoco = isSomethingInside(lines, "jacoco-maven-plugin");
+					powermock = isSomethingInside(lines, "powermock");
+					mockito = isSomethingInside(lines, "mockito");
+					easymock = isSomethingInside(lines, "easymock");
 				}
 				if (x.getName().contains("Test.java")) {
 					tests++;
@@ -52,7 +63,8 @@ public class IdenfityInterestingProjects {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		return fileName + "," + pom + "," + gradle + "," + tests + "," + classes + "," + jacoco;
+		return fileName + "," + pom + "," + gradle + "," + tests + "," + classes + "," + jacoco + "," + powermock + ","
+				+ mockito + "," + easymock;
 	}
 
 
@@ -60,7 +72,7 @@ public class IdenfityInterestingProjects {
 		var zipFiles = java.nio.file.Files.walk(java.nio.file.Paths.get(".")).filter(p -> p.toFile().toString().endsWith(".zip")).collect(Collectors.toList());
 
 		FileWriter fw = new FileWriter("suitable-projects.csv");
-		fw.write("filename,pom,gradle,tests,classes,jacoco\n");
+		fw.write("filename,pom,gradle,tests,classes,jacoco,powermock,mockito,easymock\n");
 		var goodFiles = zipFiles.parallelStream().map(x -> {
 			try {
 				String md = extractMetaData(x.toString());
