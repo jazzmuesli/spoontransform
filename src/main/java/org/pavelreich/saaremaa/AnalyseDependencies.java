@@ -1,5 +1,7 @@
 package org.pavelreich.saaremaa;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -13,6 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.zip.ZipFile;
 
 import org.mockito.Mock;
 import org.slf4j.Logger;
@@ -23,6 +26,9 @@ import groum.GROUMBuilder;
 import groum.GROUMGraph;
 import groum.GROUMNode;
 import spoon.Launcher;
+import spoon.compiler.SpoonFolder;
+import spoon.compiler.SpoonResource;
+import spoon.compiler.SpoonResourceHelper;
 import spoon.processing.AbstractProcessor;
 import spoon.reflect.CtModel;
 import spoon.reflect.code.CtAssignment;
@@ -42,10 +48,13 @@ import spoon.reflect.reference.CtTypeReference;
 public class AnalyseDependencies {
 	private static final Logger LOG = LoggerFactory.getLogger(AnalyseDependencies.class);
 
-	public Map<String, ObjectCreationOccurence> run(String path) {
-		Launcher launcher = new Launcher();
-		launcher.addInputResource(path);
 
+
+	public Map<String, ObjectCreationOccurence> run(String path) throws FileNotFoundException {
+		Launcher launcher = new Launcher();
+//		launcher.addInputResource(path);
+		SpoonResource resource = SpoonResourceHelper.createResource(new File(path));
+		launcher.addInputResource(resource);
 		launcher.buildModel();
 
 		CtModel model = launcher.getModel();
@@ -62,17 +71,21 @@ public class AnalyseDependencies {
 
 			@Override
 			public void process(CtInvocation element) {
-				String targetClass = org.mockito.Mockito.class.getCanonicalName() + ".mock";
-				if (element.toString().startsWith("org.mockito.Mockito.mock")// .getTarget() != null &&
-																				// element.getTarget().toString().equals(targetClass)
-				/* && element.getExecutable().toString().contains("mock") */) {
+				processMockInvocation(objectsCreated, element, "org.mockito.Mockito.mock", InstanceType.MOCKITO);
+				processMockInvocation(objectsCreated, element, "PowerMockito.mock", InstanceType.POWERMOCK);
+			}
+
+			private void processMockInvocation(final Map<String, ObjectCreationOccurence> objectsCreated,
+					CtInvocation element, String mockMask, InstanceType mockType) {
+				if (element.toString().contains(mockMask)) {
+					@SuppressWarnings("unused")
 					String elType = element.getTarget().toString();
 					try {
 						String simpleName = getSimpleName(element);
 						CtExpression type = ((CtFieldRead) element.getArguments().get(0)).getTarget();
 						Set<CtTypeReference<?>> x = type.getReferencedTypes();
 						CtTypeReference<?> mock = x.iterator().next();
-						objectsCreated.put(simpleName, new ObjectCreationOccurence(mock, element, InstanceType.MOCKITO));
+						objectsCreated.put(simpleName, new ObjectCreationOccurence(mock, element, mockType));
 						LOG.info("invocation [{}]={} args={} annotations={}", element.getClass(), element,
 								element.getArguments(), element.getAnnotations());
 					} catch (Exception e) {
@@ -80,7 +93,6 @@ public class AnalyseDependencies {
 								new Object[] { element, element.getPosition(), e.getMessage() }, e);
 					}
 				}
-
 			}
 
 			private String getSimpleName(CtInvocation element) {
@@ -88,9 +100,13 @@ public class AnalyseDependencies {
 					CtExpression x = ((CtAssignment) element).getAssignment();
 					return x.toString();
 				}
-				CtElement parent = element.getParent();// TODO: fix types, etc.
-				String simpleName = ((CtNamedElement) parent).getSimpleName();
-				return simpleName;
+				CtElement parent = element.getParent();
+				if (parent instanceof CtNamedElement) {
+					String simpleName = ((CtNamedElement) parent).getSimpleName();
+					return simpleName;
+				} else {
+					return "UNKNOWN:" + parent.getClass().getSimpleName()+"/"+element.getClass().getSimpleName();
+				}
 			}
 
 		});
@@ -130,7 +146,7 @@ public class AnalyseDependencies {
 			}
 		});
 
-		objectsCreated.entrySet().stream().forEach(e -> LOG.info("Object " + e.getKey() + " of type " + e.getValue()));
+		//objectsCreated.entrySet().stream().forEach(e -> LOG.info("Object " + e.getKey() + " of type " + e.getValue()));
 		return objectsCreated;
 	}
 
@@ -182,12 +198,19 @@ public class AnalyseDependencies {
 			fw.write("objectType,objectName,objectClass,file,position,rootPath\n");
 			Path rootPath = Paths.get(args[0]);
 			Files.walk(rootPath)
-					.filter(f -> f.toFile().isDirectory() & f.toFile().getAbsolutePath().endsWith("src/test"))
+					.filter(f -> isRelevantFile(f))
 					.forEach(path -> processPath(fw, path, rootPath));
 
 		} catch (IOException e) {
 			LOG.error(e.getMessage(), e);
 		}
+	}
+
+	private static boolean isRelevantFile(Path f) {
+		if (Boolean.valueOf(System.getProperty("scan.zip","false"))) {
+			return f.toString().endsWith(".zip");
+		}
+		return f.toFile().isDirectory() & f.toFile().getAbsolutePath().endsWith("src/test");
 	}
 
 	private static void processPath(FileWriter fw, Path path, Path rootPath) {
@@ -204,7 +227,7 @@ public class AnalyseDependencies {
 					e1.printStackTrace();
 				}
 			});
-			if (!mocks.isEmpty() && Boolean.valueOf(System.getProperty("enable.groom","true"))) {
+			if (!mocks.isEmpty() && Boolean.valueOf(System.getProperty("enable.groom","false"))) {
 				mocks.values().stream().map(x -> x.getAbsolutePath()).filter(p -> p != null).forEach(x -> runGroom(x));
 			}
 			fw.flush();
@@ -251,6 +274,6 @@ public class AnalyseDependencies {
 	}
 
 	static enum InstanceType {
-		REAL, MOCKITO
+		REAL, MOCKITO, POWERMOCK
 	};
 }
