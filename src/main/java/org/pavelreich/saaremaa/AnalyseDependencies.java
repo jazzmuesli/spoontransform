@@ -199,6 +199,7 @@ public class AnalyseDependencies {
 			Path rootPath = Paths.get(args[0]);
 			Files.walk(rootPath)
 					.filter(f -> isRelevantFile(f))
+					.parallel()
 					.forEach(path -> processPath(fw, path, rootPath));
 
 		} catch (IOException e) {
