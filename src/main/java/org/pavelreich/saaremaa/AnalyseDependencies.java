@@ -195,7 +195,7 @@ public class AnalyseDependencies {
 			if (args.length != 1) {
 				throw new IllegalArgumentException("Usage: directory");
 			}
-			fw.write("objectType,objectName,objectClass,file,position,rootPath\n");
+			fWrite(fw,"objectType;objectName;objectClass;file;position;rootPath\n");
 			Path rootPath = Paths.get(args[0]);
 			Files.walk(rootPath)
 					.filter(f -> isRelevantFile(f))
@@ -222,7 +222,7 @@ public class AnalyseDependencies {
 			mocks.entrySet().forEach(e -> {
 				try {
 					ObjectCreationOccurence mockOc = e.getValue();
-					fw.write(e.getKey() + "," + mockOc.toCSV() + "," + path.toFile().getAbsolutePath() + "\n");
+					fWrite(fw,e.getKey() + ";" + mockOc.toCSV() + ";" + path.toFile().getAbsolutePath() + "\n");
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -231,10 +231,18 @@ public class AnalyseDependencies {
 			if (!mocks.isEmpty() && Boolean.valueOf(System.getProperty("enable.groom","false"))) {
 				mocks.values().stream().map(x -> x.getAbsolutePath()).filter(p -> p != null).forEach(x -> runGroom(x));
 			}
-			fw.flush();
+			fwFlush(fw);
 		} catch (Exception e) {
 			LOG.error(e.getMessage(), e);
 		}
+	}
+
+	private synchronized static void fwFlush(FileWriter fw) throws IOException {
+		fw.flush();
+	}
+
+	private synchronized static void fWrite(FileWriter fw, String string) throws IOException {
+		fw.write(string);
 	}
 
 	static class ObjectCreationOccurence {
@@ -257,7 +265,7 @@ public class AnalyseDependencies {
 			} catch (Exception e) {
 				LOG.error(e.getMessage(), e);
 			}
-			return instanceType + "," + typeRef.toString() + "," + absolutePath + "," + line;
+			return instanceType + ";" + typeRef.toString() + ";" + absolutePath + ";" + line;
 		}
 
 		private String getAbsolutePath() {
