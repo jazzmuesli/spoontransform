@@ -195,7 +195,7 @@ public class AnalyseDependencies {
 			if (args.length != 1) {
 				throw new IllegalArgumentException("Usage: directory");
 			}
-			fWrite(fw,"objectType;objectName;objectClass;file;position;rootPath\n");
+			fWrite(fw,"objectName;objectType;objectClass;file;position;rootPath\n");
 			Path rootPath = Paths.get(args[0]);
 			Files.walk(rootPath)
 					.filter(f -> isRelevantFile(f))
