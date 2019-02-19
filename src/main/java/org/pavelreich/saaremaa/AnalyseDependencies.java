@@ -88,7 +88,7 @@ public class AnalyseDependencies {
 						objectsCreated.put(simpleName, new ObjectCreationOccurence(mock, element, mockType));
 						LOG.info("invocation [{}]={} args={} annotations={}", element.getClass(), element,
 								element.getArguments(), element.getAnnotations());
-					} catch (Exception e) {
+					} catch (Throwable e) {
 						LOG.error("Can't parse element {} at {} due to error {}",
 								new Object[] { element, element.getPosition(), e.getMessage() }, e);
 					}
@@ -232,7 +232,7 @@ public class AnalyseDependencies {
 				mocks.values().stream().map(x -> x.getAbsolutePath()).filter(p -> p != null).forEach(x -> runGroom(x));
 			}
 			fwFlush(fw);
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			LOG.error(e.getMessage(), e);
 		}
 	}
