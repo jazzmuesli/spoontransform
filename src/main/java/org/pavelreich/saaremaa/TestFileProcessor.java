@@ -1,6 +1,11 @@
 package org.pavelreich.saaremaa;
 
 import com.google.gson.GsonBuilder;
+
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +39,12 @@ import java.util.stream.Collectors;
  *
  */
 public class TestFileProcessor extends AbstractProcessor<CtClass> {
+     static final Set<String> SETUP_CLASSES = new HashSet<String>(Arrays.asList(
+    		BeforeClass.class.getSimpleName(),
+    		Before.class.getSimpleName(),
+    		After.class.getSimpleName(),
+    		AfterClass.class.getSimpleName()
+    		));
 
     private static final Logger LOG = LoggerFactory.getLogger(TestFileProcessor.class);
 
@@ -117,7 +128,9 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
         	map.put("simpleName", ctClass.getQualifiedName());
         	map.put("annotations", annotations);
         	map.put("testMethods", getTestMethods().stream().map(x -> x.toJSON()).collect(Collectors.toList()));
+        	map.put("setupMethods", getSetupMethods().stream().map(x -> x.toJSON()).collect(Collectors.toList()));
         	map.put("mockFields", getMockFields().stream().map(x -> x.toJSON()).collect(Collectors.toList()));
+        	map.put("fields", fields.stream().map(x -> x.toJSON()).collect(Collectors.toList()));
         	return map;
         }
         boolean hasTests() {
@@ -126,6 +139,9 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
 
         List<MyMethod> getTestMethods() {
             return this.methods.values().stream().filter(p->p.isTest()).collect(Collectors.toList());
+        }
+        List<MyMethod> getSetupMethods() {
+            return this.methods.values().stream().filter(p->p.isSetup()).collect(Collectors.toList());
         }
 
         List<MyField> getMockFields() {
@@ -220,6 +236,10 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
         boolean isTest() {
             return annotations.contains("Test");
         }
+        boolean isSetup() {
+        	return !annotations.isEmpty() && SETUP_CLASSES.containsAll(annotations);
+        }
+
         private boolean isVoid(CtMethod p) {
             String simpleName = p.getType().getSimpleName();
             return simpleName.contains("void");
