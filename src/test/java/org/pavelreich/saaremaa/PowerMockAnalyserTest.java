@@ -15,7 +15,7 @@ public class PowerMockAnalyserTest {
     @Test
     public void test() throws FileNotFoundException {
 
-    	TestFileProcessor s = TestFileProcessor.run("src/test");
+    	TestFileProcessor s = TestFileProcessor.run("src/test","result.json");
     	s.getElements().forEach(x->LOG.info("x: "+ x.toJSON()));
     }
     
