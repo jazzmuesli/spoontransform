@@ -40,7 +40,7 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
     public void process(CtClass ctClass) {
         MyClass myClass = new MyClass(ctClass);
         if (myClass.hasTests()) {
-            LOG.info("ctClass:" + ctClass.getSimpleName() + ",\n methods:" + myClass.getTestMethods() + ", \nfields:" + myClass.getMockFields());
+            LOG.info("myClass:" + myClass);
             this.elements.add(myClass);
         }
 
@@ -106,6 +106,11 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
 
         List<MyField> getMockFields() {
             return this.fields.stream().filter(p->!p.getMockType().isEmpty()).collect(Collectors.toList());
+        }
+
+        @Override
+        public String toString() {
+            return "ctClass:" + ctClass.getQualifiedName() + ", methods:" + getTestMethods() + ", fields:" +  getMockFields();
         }
     }
 
