@@ -16,10 +16,7 @@ import spoon.reflect.reference.CtExecutableReference;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
@@ -74,17 +71,29 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
     static class MyClass {
 
         private final CtClass ctClass;
-        private final Map<String, MyMethod> methods;
-        private final Set<String> annotations;
-        private final List<MyField> fields;
+        private Map<String, MyMethod> methods = new HashMap<>();
+        private Set<String> annotations = new HashSet<>();
+        private List<MyField> fields = new ArrayList<>();
 
         public MyClass(CtClass ctClass) {
             this.ctClass = ctClass;
-            this.annotations = getAnnotations(ctClass);
-            Set<CtMethod> allMethods = ctClass.getAllMethods();
-            this.methods = allMethods.stream().map(x->new MyMethod(x)).filter(p -> p.isPublicVoidMethod()).collect(Collectors.toMap(e -> e.simpleName, e -> e));
-            List<CtField> fields = ctClass.getFields();
-            this.fields = fields.stream().map(x -> new MyField(x)).collect(Collectors.toList());
+            try {
+                this.annotations = getAnnotations(ctClass);
+            } catch (Exception e) {
+                LOG.error("Error occured for annotations of class:" + ctClass + ", error: " + e.getMessage(), e);
+            }
+            try {
+                Set<CtMethod> allMethods = ctClass.getAllMethods();
+                this.methods = allMethods.stream().map(x -> new MyMethod(x)).filter(p -> p.isPublicVoidMethod()).collect(Collectors.toMap(e -> e.simpleName, e -> e));
+            } catch (Exception e) {
+                LOG.error("Error occured for methods of class:" + ctClass + ", error: " + e.getMessage(), e);
+            }
+            try {
+                List<CtField> fields = ctClass.getFields();
+                this.fields = fields.stream().map(x -> new MyField(x)).collect(Collectors.toList());
+            } catch (Exception e) {
+                LOG.error("Error occured for fields of class:" + ctClass + ", error: " + e.getMessage(), e);
+            }
         }
 
         boolean hasTests() {
@@ -127,6 +136,9 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
                 if (found.isPresent()) {
                     return String.valueOf(found.get()).replace(".class","");
                 }
+            }
+            if (annotations.contains("Mock")) {
+                return typeName;
             }
             return "";
         }
