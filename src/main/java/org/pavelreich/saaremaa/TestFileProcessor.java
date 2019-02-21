@@ -27,9 +27,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -101,11 +101,18 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
         private Map<String, MyMethod> methods = new HashMap<>();
         private Set<String> annotations = new HashSet<>();
         private List<MyField> fields = new ArrayList<>();
+		private Map<String,Object> annotationsMap;
 
         public MyClass(CtClass ctClass) {
             this.ctClass = ctClass;
             try {
                 this.annotations = getAnnotations(ctClass);
+				this.annotationsMap = ctClass.getAnnotations().stream().
+						filter(p->p.getValues().containsKey("value")).
+						collect(Collectors.toMap(
+								e -> e.getAnnotationType().getQualifiedName(), 
+								e->e.getValues().get("value").toString())
+							);
             } catch (Exception e) {
                 LOG.error("Error occured for annotations of class:" + ctClass + ", error: " + e.getMessage(), e);
             }
@@ -127,6 +134,7 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
         	HashMap map = new HashMap();
         	map.put("simpleName", ctClass.getQualifiedName());
         	map.put("annotations", annotations);
+        	map.put("annotationsMap", annotationsMap);
         	map.put("testMethods", getTestMethods().stream().map(x -> x.toJSON()).collect(Collectors.toList()));
         	map.put("setupMethods", getSetupMethods().stream().map(x -> x.toJSON()).collect(Collectors.toList()));
         	map.put("mockFields", getMockFields().stream().map(x -> x.toJSON()).collect(Collectors.toList()));
