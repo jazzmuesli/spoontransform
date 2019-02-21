@@ -27,7 +27,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.lang.annotation.Annotation;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
@@ -66,13 +65,13 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
 
     public static void main(String[] args) {
         try {
-            run(args[0]);
+            run(args[0], "result.json");
         } catch (FileNotFoundException e) {
             LOG.error(e.getMessage(), e);
         }
     }
 
-    public static TestFileProcessor run(String pathname) throws FileNotFoundException {
+    public static TestFileProcessor run(String pathname, String resultFileName) throws FileNotFoundException {
         Launcher launcher = new Launcher();
         SpoonResource resource = SpoonResourceHelper.createResource(new File(pathname));
         launcher.addInputResource(resource);
@@ -84,7 +83,7 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         String json = gson.toJson(processor.getElements().stream().map(x->x.toJSON()).collect(Collectors.toList()));
         try {
-            FileWriter fw = new FileWriter("result.json");
+            FileWriter fw = new FileWriter(resultFileName);
             fw.write(json);
             fw.close();
         } catch (IOException e) {
