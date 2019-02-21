@@ -70,7 +70,7 @@ public class App {
 			Properties props = new Properties();
 			try {
 				props.load(getClass().getResourceAsStream("app.properties"));
-			} catch (IOException e) {
+			} catch (Exception e) {
 				LOG.error(e.getMessage(), e);
 			}
 
@@ -110,7 +110,7 @@ public class App {
 		extractCodeMetricsUsingPMD();
 //		TODO: uncomment for debugging PMD.main("-d src/main/java -f xml -R rulesets/java/basic.xml -version 1.8 -language java".split("\\s+"));
 
-		runSpoon();
+//		runSpoon();
 	}
 
 	private static void runSpoon() {
@@ -191,8 +191,8 @@ public class App {
 				ASTCompilationUnit compilationUnit = (ASTCompilationUnit) parser.parse(filename, reader);
 				LOG.info("compilationUnit: {}", compilationUnit);
 
-				RuleSets ruleSets = new RuleSetFactory().createRuleSets("rulesets/java/design.xml");
-				processor.processSourceCode(sourceCode, ruleSets, ctx);
+//				RuleSets ruleSets = new RuleSetFactory().createRuleSets("rulesets/java/design.xml");
+//				processor.processSourceCode(sourceCode, ruleSets, ctx);
 
 				List<ASTAnyTypeDeclaration> astClassOrInterfaceDeclarations = compilationUnit
 						.findDescendantsOfType(ASTAnyTypeDeclaration.class);

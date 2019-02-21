@@ -1,14 +1,11 @@
 package org.pavelreich.saaremaa;
 
-import org.mockito.Mock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import spoon.Launcher;
 import spoon.compiler.SpoonResource;
 import spoon.compiler.SpoonResourceHelper;
-import spoon.processing.AbstractProcessor;
 import spoon.reflect.CtModel;
-import spoon.reflect.declaration.CtField;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -21,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class AnalyseDependencies {
-	private static final Logger LOG = LoggerFactory.getLogger(AnalyseDependencies.class);
+	static final Logger LOG = LoggerFactory.getLogger(AnalyseDependencies.class);
 
 
 
@@ -99,27 +96,6 @@ public class AnalyseDependencies {
 
 	private synchronized static void fWrite(FileWriter fw, String string) throws IOException {
 		fw.write(string);
-	}
-
-
-	private static class AnnotatedMockProcessor extends AbstractProcessor<CtField> {
-
-		private final Map<String, ObjectCreationOccurence> objectsCreated;
-
-		public AnnotatedMockProcessor(Map<String, ObjectCreationOccurence> objectsCreated) {
-			this.objectsCreated = objectsCreated;
-		}
-
-		@Override
-        public void process(CtField element) {
-            if (element.getAnnotation(Mock.class) != null) {
-                objectsCreated.put(element.getSimpleName(), new ObjectCreationOccurence(element.getType(), element, InstanceType.MOCKITO));
-                LOG.info("field [{}]={} annotations={}", element.getClass(), element,
-                        element.getAnnotation(Mock.class));
-            }
-
-        }
-
 	}
 
 }

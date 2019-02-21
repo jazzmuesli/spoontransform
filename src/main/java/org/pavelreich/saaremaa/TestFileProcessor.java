@@ -2,6 +2,9 @@ package org.pavelreich.saaremaa;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.Gson;
+
 import spoon.Launcher;
 import spoon.compiler.SpoonResource;
 import spoon.compiler.SpoonResourceHelper;
@@ -96,6 +99,15 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
             }
         }
 
+        String toJSON() {
+        	Gson gson = new Gson();
+        	HashMap map = new HashMap();
+        	map.put("simpleName", ctClass.getQualifiedName());
+        	map.put("annotations", annotations);
+        	map.put("testMethods", getTestMethods().stream().map(x -> x.toJSON()).collect(Collectors.toList()));
+        	map.put("mockFields", getMockFields().stream().map(x -> x.toJSON()).collect(Collectors.toList()));
+        	return gson.toJson(map);
+        }
         boolean hasTests() {
             return this.methods.values().stream().anyMatch(p->p.isTest());
         }
@@ -132,7 +144,16 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
             this.defaultExpression = ctField.getDefaultExpression();
         }
 
-        public String getMockType() {
+        public HashMap toJSON() {
+        	HashMap map = new HashMap();
+        	map.put("simpleName", simpleName);
+        	map.put("annotations", annotations);
+        	map.put("typeName", typeName);
+        	map.put("mockType", getMockType());
+        	return map;
+		}
+
+		public String getMockType() {
             if (defaultExpression instanceof CtInvocation) {
                 CtExecutableReference exec = ((CtInvocation) defaultExpression).getExecutable();
                 if (!exec.getSimpleName().contains("mock")) {
@@ -169,7 +190,17 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
         }
 
 
-        private boolean isPublicVoidMethod() {
+        public HashMap toJSON() {
+        	HashMap map = new HashMap();
+        	map.put("simpleName", simpleName);
+        	map.put("annotations", annotations);
+        	map.put("LOC", lineCount());
+        	map.put("statementCount", statementCount());
+        	return map;
+		}
+
+
+		private boolean isPublicVoidMethod() {
             CtMethod p = method;
             return p.getParameters().isEmpty() && p.isPublic() && isVoid(p);
         }
