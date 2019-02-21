@@ -1,5 +1,6 @@
 package org.pavelreich.saaremaa;
 
+import com.google.gson.GsonBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,8 +20,11 @@ import spoon.reflect.reference.CtExecutableReference;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 /**
@@ -66,6 +70,15 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
         CtModel model = launcher.getModel();
         TestFileProcessor processor = new TestFileProcessor();
         model.processWith(processor);
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        String json = gson.toJson(processor.getElements().stream().map(x->x.toJSON()).collect(Collectors.toList()));
+        try {
+            FileWriter fw = new FileWriter("result.json");
+            fw.write(json);
+            fw.close();
+        } catch (IOException e) {
+            LOG.error(e.getMessage(), e);
+        }
         return processor;
     }
 
@@ -99,14 +112,13 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
             }
         }
 
-        String toJSON() {
-        	Gson gson = new Gson();
+        HashMap toJSON() {
         	HashMap map = new HashMap();
         	map.put("simpleName", ctClass.getQualifiedName());
         	map.put("annotations", annotations);
         	map.put("testMethods", getTestMethods().stream().map(x -> x.toJSON()).collect(Collectors.toList()));
         	map.put("mockFields", getMockFields().stream().map(x -> x.toJSON()).collect(Collectors.toList()));
-        	return gson.toJson(map);
+        	return map;
         }
         boolean hasTests() {
             return this.methods.values().stream().anyMatch(p->p.isTest());
