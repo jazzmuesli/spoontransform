@@ -110,7 +110,9 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
 
         @Override
         public String toString() {
-            return "ctClass:" + ctClass.getQualifiedName() + ", methods:" + getTestMethods() + ", fields:" +  getMockFields();
+            List<MyMethod> testMethods = getTestMethods();
+            List<MyField> mockFields = getMockFields();
+            return "ctClass=" + ctClass.getQualifiedName() + ", methods.size=" + testMethods.size() + ":" + testMethods + ", fields.size=" + mockFields.size() + ":" + mockFields;
         }
     }
 
