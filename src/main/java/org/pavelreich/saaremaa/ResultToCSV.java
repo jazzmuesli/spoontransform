@@ -33,7 +33,7 @@ public class ResultToCSV {
 		BufferedWriter writer = Files.newBufferedWriter(Paths.get("results.csv"));
 		CSVPrinter csvPrinter = new CSVPrinter(writer,
 				CSVFormat.DEFAULT
-						.withHeader("testClassName", "methodType", "methodName", "LOC", "statements", "annotations")
+						.withHeader("fileName", "testClassName", "methodType", "methodName", "LOC", "statements", "annotations")
 						.withDelimiter(';'));
 
 		List<Path> files = java.nio.file.Files.walk(java.nio.file.Paths.get("."))
@@ -51,40 +51,40 @@ public class ResultToCSV {
 			Type type = new TypeToken<List>() {
 			}.getType();
 			List<Map> json = new Gson().fromJson(jsonStr, type);
-			json.stream().forEach(x -> processTest(x, csvPrinter));
+			json.stream().forEach(x -> processTest(x, file, csvPrinter));
 		} catch (IOException e) {
 			LOG.error(e.getMessage(), e);
 		}
 	}
 
-	private synchronized static Object processTest(Map x, CSVPrinter csvPrinter) {
-		Object testClassName = x.get("simpleName");
+	private synchronized static void processTest(Map testMap, Path file, CSVPrinter csvPrinter) {
+		Object testClassName = testMap.get("simpleName");
 		try {
-			List<Map> setupMethods = (List) x.getOrDefault("setupMethods", Collections.emptyList());
-			List<Map> testMethods = (List) x.getOrDefault("testMethods", Collections.emptyList());
+			Path fileName = file.getFileName();
+			List<Map> setupMethods = (List) testMap.getOrDefault("setupMethods", Collections.emptyList());
+			List<Map> testMethods = (List) testMap.getOrDefault("testMethods", Collections.emptyList());
 			setupMethods.forEach(setupMethod -> {
 				try {
-					csvPrinter.printRecord(testClassName, "setup", setupMethod.get("simpleName"),
+					
+					csvPrinter.printRecord(fileName, testClassName, "setup", setupMethod.get("simpleName"),
 							setupMethod.get("LOC"), setupMethod.get("statementCount"), setupMethod.get("annotations"));
 				} catch (IOException e) {
-					LOG.error("Failed to handle " + x + " due to error: " + e.getMessage(), e);
+					LOG.error("Failed to handle " + testMap + " due to error: " + e.getMessage(), e);
 				}
 			});
 			testMethods.forEach(setupMethod -> {
 				try {
-					csvPrinter.printRecord(testClassName, "test", setupMethod.get("simpleName"), setupMethod.get("LOC"),
+					csvPrinter.printRecord(fileName, testClassName, "test", setupMethod.get("simpleName"), setupMethod.get("LOC"),
 							setupMethod.get("statementCount"), setupMethod.get("annotations"));
 				} catch (IOException e) {
-					LOG.error("Failed to handle " + x + " due to error: " + e.getMessage(), e);
+					LOG.error("Failed to handle " + testMap + " due to error: " + e.getMessage(), e);
 				}
 			});
 
-			csvPrinter.printRecord(testClassName, "class", "", 0, 0, x.get("annotationsMap"));
+			csvPrinter.printRecord(fileName, testClassName, "class", "", 0, 0, testMap.get("annotationsMap"));
 			csvPrinter.flush();
 		} catch (Exception e) {
-			LOG.error("Failed to handle " + x + " due to error: " + e.getMessage(), e);
+			LOG.error("Failed to handle " + testMap + " due to error: " + e.getMessage(), e);
 		}
-
-		return testClassName;
 	}
 }
