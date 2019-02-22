@@ -60,7 +60,7 @@ public class ResultToCSV {
 	private synchronized static void processTest(Map testMap, Path file, CSVPrinter csvPrinter) {
 		Object testClassName = testMap.get("simpleName");
 		try {
-			Path fileName = file.getFileName();
+			Path fileName = file.toAbsolutePath();
 			List<Map> setupMethods = (List) testMap.getOrDefault("setupMethods", Collections.emptyList());
 			List<Map> testMethods = (List) testMap.getOrDefault("testMethods", Collections.emptyList());
 			setupMethods.forEach(setupMethod -> {
