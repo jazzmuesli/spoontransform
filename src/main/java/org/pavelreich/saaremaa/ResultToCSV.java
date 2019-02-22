@@ -52,7 +52,7 @@ public class ResultToCSV {
 			}.getType();
 			List<Map> json = new Gson().fromJson(jsonStr, type);
 			json.stream().forEach(x -> processTest(x, file, csvPrinter));
-		} catch (IOException e) {
+		} catch (Exception e) {
 			LOG.error(e.getMessage(), e);
 		}
 	}
