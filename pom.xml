@@ -33,6 +33,18 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>org.powermock</groupId>
+			<artifactId>powermock-api-mockito2</artifactId>
+			<version>1.7.0</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>2.23.4</version>
+		</dependency>
+
+		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-csv</artifactId>
 			<version>1.6</version>
@@ -43,20 +55,10 @@
 			<artifactId>org.eclipse.jgit</artifactId>
 			<version>5.2.1.201812262042-r</version>
 		</dependency>
-
-		<dependency>
-			<groupId>org.powermock</groupId>
-			<artifactId>powermock-module-junit4</artifactId>
-			<version>1.6.4</version>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.powermock</groupId>
-			<artifactId>powermock-api-mockito</artifactId>
-			<version>1.6.4</version>
-			<scope>test</scope>
-		</dependency>
+		<!-- <dependency> <groupId>org.powermock</groupId> <artifactId>powermock-module-junit4</artifactId> 
+			<version>1.6.4</version> <scope>test</scope> </dependency> <dependency> <groupId>org.powermock</groupId> 
+			<artifactId>powermock-api-mockito</artifactId> <version>1.6.4</version> <scope>test</scope> 
+			</dependency> -->
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
@@ -93,13 +95,6 @@
 			<groupId>net.sourceforge.pmd</groupId>
 			<artifactId>pmd-java</artifactId>
 			<version>6.8.0</version>
-		</dependency>
-		<!-- <dependency> <groupId>com.github.devcsrj</groupId> <artifactId>mvnrepository-api-client</artifactId> 
-			<version>1.0.0</version> </dependency> -->
-		<dependency>
-			<groupId>org.mockito</groupId>
-			<artifactId>mockito-core</artifactId>
-			<version>2.23.4</version>
 		</dependency>
 
 
