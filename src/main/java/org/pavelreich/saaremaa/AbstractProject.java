@@ -5,9 +5,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.pavelreich.saaremaa.IdentifyInterestingProjects.CSVReporter;
-
-
 public abstract class AbstractProject<E extends ProjectEntry> {
 
 	protected String fileName;
@@ -23,10 +20,9 @@ public abstract class AbstractProject<E extends ProjectEntry> {
 	public abstract List<String> readLines(E x);
 
 	public void reportFilesInsideZip(CSVReporter filesCSVPrinter) {
-		getFiles().stream().forEach(
-				x -> {
-					filesCSVPrinter.write(this.fileName, x.isDirectory(), x.getName(), x.getSize(), x.getTime());
-				});
+		getFiles().stream().forEach(x -> {
+			filesCSVPrinter.write(this.fileName, x.isDirectory(), x.getName(), x.getSize(), x.getTime());
+		});
 	}
 
 	public int countProdToTestClasses() {
@@ -37,7 +33,8 @@ public abstract class AbstractProject<E extends ProjectEntry> {
 				.map(x -> x.replaceAll("Test.java", "")).collect(Collectors.toSet());
 		List<String> prodClasses = fileNames.stream().filter(p -> !p.endsWith("Test.java"))
 				.map(x -> x.replaceAll(".java", "")).collect(Collectors.toList());
-		List<String> matchedProdClasses = prodClasses.stream().filter(p -> testClasses.contains(p)).collect(Collectors.toList());
+		List<String> matchedProdClasses = prodClasses.stream().filter(p -> testClasses.contains(p))
+				.collect(Collectors.toList());
 		return matchedProdClasses.size();
 	}
 

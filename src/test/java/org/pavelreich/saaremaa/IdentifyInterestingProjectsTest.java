@@ -5,7 +5,6 @@ import java.nio.file.Paths;
 
 import org.junit.*;
 import org.mockito.Mockito;
-import org.pavelreich.saaremaa.IdentifyInterestingProjects.CSVReporter;
 
 public class IdentifyInterestingProjectsTest {
 

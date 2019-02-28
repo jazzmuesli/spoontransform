@@ -16,6 +16,7 @@ import org.apache.commons.csv.CSVPrinter;
 /**
  * identify suitable projects in 50K-C_projects.tgz
  * 
+ * java -classpath /home/preich/projects/spoontransform/target/experiments-1.0-SNAPSHOT-jar-with-dependencies.jar org.pavelreich.saaremaa.IdentifyInterestingProjects
  * @author preich
  *
  */
@@ -24,39 +25,7 @@ public class IdentifyInterestingProjects {
 	private CSVReporter suitableCSVPrinter;
 	private CSVReporter filesCSVPrinter;
 
-	static class CSVReporter {
 
-		private CSVPrinter csvPrinter;
-
-		public CSVReporter(CSVPrinter csvPrinter) {
-			this.csvPrinter = csvPrinter;
-		}
-
-		public void write(Object... values) {
-			try {
-				csvPrinter.printRecord(values);
-			} catch (IOException e) {
-				throw new IllegalArgumentException(e.getMessage(), e);
-			}
-		}
-
-		public void flush() {
-			try {
-				csvPrinter.flush();
-			} catch (IOException e) {
-				throw new IllegalArgumentException(e.getMessage(), e);
-			}
-		}
-
-		public void close() {
-			try {
-				csvPrinter.close();
-			} catch (IOException e) {
-				throw new IllegalArgumentException(e.getMessage(), e);
-			}
-		}
-
-	}
 
 	static class ProjectsCSVReporter extends CSVReporter {
 		public ProjectsCSVReporter() throws IOException {
