@@ -33,6 +33,11 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>org.apache.maven.shared</groupId>
+			<artifactId>maven-invoker</artifactId>
+			<version>LATEST</version>
+		</dependency>
+		<dependency>
 			<groupId>gr.spinellis</groupId>
 			<artifactId>ckjm</artifactId>
 			<version>1.9</version>
