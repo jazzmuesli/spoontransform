@@ -2,6 +2,7 @@ package org.pavelreich.saaremaa;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Collections;
@@ -44,9 +45,11 @@ public class BuildProjects {
 
 	public static void main(String[] args) throws IOException {
 
-		List<File> dirs = java.nio.file.Files.walk(java.nio.file.Paths.get("."))
+		Integer maxdepth = Integer.valueOf(System.getProperty("maxdepth", "2"));
+		List<File> dirs = java.nio.file.Files.walk(java.nio.file.Paths.get("."),maxdepth)
 				.filter(p -> p.toFile().getName().contains("pom.xml")).map(f -> f.getParent().toFile())
 				.collect(Collectors.toList());
+		LOG.info("With maxdepth=" + maxdepth +" found " + dirs.size() + " directories");
 		CSVReporter csvReporter = new CSVReporter(new CSVPrinter(
 				Files.newBufferedWriter(Paths.get("build-projects.csv")),
 				CSVFormat.DEFAULT
@@ -191,10 +194,11 @@ public class BuildProjects {
 			LOG.error("Can't build " + basedir + " due to " + e.getMessage(), e);
 			outcome = new BuildOutcome(basedir, startTime, System.currentTimeMillis(), null, e);
 		}
+		Exception exception = outcome.mavenInvocationException == null ? outcome.result.getExecutionException() : outcome.mavenInvocationException;
 		csvReporter.write(new String[] { outcome.basedir.getAbsolutePath(), String.valueOf(outcome.startTime),
 				String.valueOf(outcome.endTime), String.valueOf(outcome.duration),
 				outcome.result == null ? null : String.valueOf(outcome.result.getExitCode()),
-				outcome.mavenInvocationException == null ? null : outcome.mavenInvocationException.getMessage() });
+				outcome.mavenInvocationException == null ? outcome.result.getExecutionException().getMessage() : outcome.mavenInvocationException.getMessage() });
 		csvReporter.flush();
 		return outcome;
 	}
