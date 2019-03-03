@@ -150,7 +150,12 @@ public class ClassMetricsGatherer {
 				reporter.write(values.toArray(new String[0]));
 			}
 		};
-		MetricsFilter.runMetrics(new String[] { f.getAbsolutePath() }, outputHandler);
+		try {
+			MetricsFilter.runMetrics(new String[] { f.getAbsolutePath() }, outputHandler);			
+		} catch (Exception e)  {
+			LOG.error("Failed to process " + fileName + " due to " + e.getMessage(), e);
+		}
+		
 		reporter.flush();
 
 	}
