@@ -72,49 +72,52 @@ public class ClassMetricsGatherer {
 	}
 
 	static String[] getHeaders() {
-		List<String> headers = new ArrayList(Arrays.asList("fileName", "className","simpleClassName","gatherer"));
+		List<String> headers = new ArrayList(Arrays.asList("fileName", "className", "simpleClassName", "gatherer"));
 		headers.addAll(metrics.stream().map(x -> x.name()).collect(Collectors.toList()));
 		return headers.toArray(new String[0]);
 	}
 
 	public static void main(String[] args) throws IOException {
-		List<Path> javaFiles = java.nio.file.Files.walk(java.nio.file.Paths.get("."))
-				.filter(p -> p.toFile().getName().endsWith(".java")).collect(Collectors.toList());
-		List<Path> classFiles = java.nio.file.Files.walk(java.nio.file.Paths.get("."))
-				.filter(p -> p.toFile().getName().endsWith(".class")).collect(Collectors.toList());
+		List<Path> files = java.nio.file.Files.walk(java.nio.file.Paths.get("."))
+				.filter(p -> p.toFile().getName().endsWith(".java") || p.toFile().getName().endsWith(".class"))
+				.collect(Collectors.toList());
 		CSVReporter reporter = new MetricsCSVReporter();
-		javaFiles.parallelStream().forEach(f -> reportMetrics(f.toFile().getAbsolutePath(), reporter));
-		classFiles.parallelStream().forEach(f -> reportClassMetrics(f.toFile().getAbsolutePath(), reporter));
+		files.parallelStream().forEach(f -> reportMetrics(f.toFile().getAbsolutePath(), reporter));
 		reporter.close();
 
 	}
 
 	public static void reportMetrics(String fileName, CSVReporter reporter) {
-		PMDConfiguration configuration = new PMDConfiguration();
-		configuration.setReportFormat("xml");
-		configuration.setInputPaths("src/main/java");
-		LanguageVersion version = new JavaLanguageModule().getVersion("1.8");
-		configuration.setDefaultLanguageVersion(version);
-		File sourceCodeFile = new File(fileName);
-		String filename = sourceCodeFile.getAbsolutePath();
-		try (InputStream sourceCode = new FileInputStream(sourceCodeFile)) {
-			try (BufferedReader reader = new BufferedReader(new InputStreamReader(sourceCode))) {
-				Parser parser = PMD.parserFor(version, configuration);
-				ASTCompilationUnit compilationUnit = (ASTCompilationUnit) parser.parse(filename, reader);
+		if (fileName.endsWith(".java") && Boolean.valueOf(System.getProperty("runPMD", "true"))) {
+			PMDConfiguration configuration = new PMDConfiguration();
+			configuration.setReportFormat("xml");
+			configuration.setInputPaths("src/main/java");
+			LanguageVersion version = new JavaLanguageModule().getVersion("1.8");
+			configuration.setDefaultLanguageVersion(version);
+			File sourceCodeFile = new File(fileName);
+			String filename = sourceCodeFile.getAbsolutePath();
+			try (InputStream sourceCode = new FileInputStream(sourceCodeFile)) {
+				try (BufferedReader reader = new BufferedReader(new InputStreamReader(sourceCode))) {
+					Parser parser = PMD.parserFor(version, configuration);
+					ASTCompilationUnit compilationUnit = (ASTCompilationUnit) parser.parse(filename, reader);
 
-				List<ASTAnyTypeDeclaration> astClassOrInterfaceDeclarations = compilationUnit
-						.findDescendantsOfType(ASTAnyTypeDeclaration.class);
-				astClassOrInterfaceDeclarations
-						.forEach(declaration -> reportJavaMetrics(fileName, reporter, declaration));
+					List<ASTAnyTypeDeclaration> astClassOrInterfaceDeclarations = compilationUnit
+							.findDescendantsOfType(ASTAnyTypeDeclaration.class);
+					astClassOrInterfaceDeclarations
+							.forEach(declaration -> reportJavaMetrics(fileName, reporter, declaration));
 
+				}
+			} catch (Exception e) {
+				LOG.error("Can't report metrics for " + fileName + " due to " + e.getMessage(), e);
 			}
-		} catch (Exception e) {
-			LOG.error("Can't report metrics for " + fileName + " due to " + e.getMessage(), e);
+			reporter.flush();
+		} else if (fileName.endsWith(".class")) {
+			reportClassMetrics(fileName, reporter);
 		}
-		reporter.flush();
 	}
+
 	static final String NA_SYMBOL = String.valueOf(Double.NaN);
-	
+
 	private static void reportJavaMetrics(String fileName, CSVReporter reporter, ASTAnyTypeDeclaration declaration) {
 		String className = declaration.getImage();
 		List<String> values = new ArrayList(Arrays.asList(fileName, className, getSimpleClassName(className), "PMD"));
@@ -122,8 +125,8 @@ public class ClassMetricsGatherer {
 			try {
 				return m.jcmKey != null ? String.valueOf(JavaMetrics.get(m.jcmKey, declaration)) : NA_SYMBOL;
 			} catch (Exception e) {
-				LOG.error("Can't get metric " + m + " in declaration " + className + " file " + fileName
-						+ " due to " + e.getMessage());
+				LOG.error("Can't get metric " + m + " in declaration " + className + " file " + fileName + " due to "
+						+ e.getMessage());
 				return String.valueOf(Double.NaN);
 			}
 		}).collect(Collectors.toList());
@@ -141,7 +144,9 @@ public class ClassMetricsGatherer {
 				values.add(name);
 				values.add(getSimpleClassName(name));
 				values.add("CKJM");
-				metrics.stream().map(x -> x.ckjmExtractor != null ? String.valueOf(x.ckjmExtractor.apply(c)) : NA_SYMBOL).forEach(s->values.add(s));
+				metrics.stream()
+						.map(x -> x.ckjmExtractor != null ? String.valueOf(x.ckjmExtractor.apply(c)) : NA_SYMBOL)
+						.forEach(s -> values.add(s));
 				reporter.write(values.toArray(new String[0]));
 			}
 		};
