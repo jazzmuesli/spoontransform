@@ -198,7 +198,7 @@ public class BuildProjects {
 		csvReporter.write(new String[] { outcome.basedir.getAbsolutePath(), String.valueOf(outcome.startTime),
 				String.valueOf(outcome.endTime), String.valueOf(outcome.duration),
 				outcome.result == null ? null : String.valueOf(outcome.result.getExitCode()),
-				outcome.mavenInvocationException == null ? outcome.result.getExecutionException().getMessage() : outcome.mavenInvocationException.getMessage() });
+				exception != null ? exception.getClass().getCanonicalName()+":" +exception.getMessage() : null });
 		csvReporter.flush();
 		return outcome;
 	}
