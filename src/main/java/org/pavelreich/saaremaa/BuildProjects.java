@@ -44,20 +44,29 @@ public class BuildProjects {
 	}
 
 	public static void main(String[] args) throws IOException {
+		List<File> dirs = getDirectories();
+		CSVReporter csvReporter = createCSVReporter();
+		BuildProjects buildProjects = new BuildProjects(csvReporter);
+		dirs.parallelStream().map(d -> buildProjects.buildProject(d)).collect(Collectors.toList());
+		csvReporter.close();
+	}
 
-		Integer maxdepth = Integer.valueOf(System.getProperty("maxdepth", "2"));
-		List<File> dirs = java.nio.file.Files.walk(java.nio.file.Paths.get("."),maxdepth)
-				.filter(p -> p.toFile().getName().contains("pom.xml")).map(f -> f.getParent().toFile())
-				.collect(Collectors.toList());
-		LOG.info("With maxdepth=" + maxdepth +" found " + dirs.size() + " directories");
+	public static CSVReporter createCSVReporter() throws IOException {
 		CSVReporter csvReporter = new CSVReporter(new CSVPrinter(
 				Files.newBufferedWriter(Paths.get("build-projects.csv")),
 				CSVFormat.DEFAULT
 						.withHeader(new String[] { "basedir", "startTime", "endTime", "duration", "result", "error" })
 						.withDelimiter(';')));
-		BuildProjects buildProjects = new BuildProjects(csvReporter);
-		dirs.parallelStream().map(d -> buildProjects.buildProject(d)).collect(Collectors.toList());
-		csvReporter.close();
+		return csvReporter;
+	}
+
+	public static List<File> getDirectories() throws IOException {
+		Integer maxdepth = Integer.valueOf(System.getProperty("maxdepth", "2"));
+		List<File> dirs = java.nio.file.Files.walk(java.nio.file.Paths.get("."),maxdepth)
+				.filter(p -> p.toFile().getName().contains("pom.xml")).map(f -> f.getParent().toFile())
+				.collect(Collectors.toList());
+		LOG.info("With maxdepth=" + maxdepth +" found " + dirs.size() + " directories");
+		return dirs;
 	}
 
 	private final class MyLogger implements InvokerLogger {
