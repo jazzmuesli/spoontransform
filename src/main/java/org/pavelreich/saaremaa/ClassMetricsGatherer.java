@@ -95,27 +95,31 @@ public class ClassMetricsGatherer {
 		List<String> srcDirs = java.nio.file.Files.walk(java.nio.file.Paths.get(".")).filter(p->p.toFile().getAbsolutePath().endsWith("src")).map(x->x.getParent().toFile().getAbsolutePath()).collect(Collectors.toList());
 		CSVReporter reporter = new CKMetricsCSVReporter();
 		srcDirs.parallelStream().forEach(dirName -> {
-			CKReport report = new CK().calculate(dirName);
-			report.all().forEach(result -> 
-			reporter.write(result.getFile(),
-				result.getClassName(),
-				result.getType(),
-				result.getCbo(),
-				result.getWmc(),
-				result.getDit(),
-				result.getNoc(),
-				result.getRfc(),
-				result.getLcom(),
-				result.getNom(),
-				result.getNopm(), 
-				result.getNosm(),
-				result.getNof(),
-				result.getNopf(), 
-				result.getNosf(),
-				result.getNosi(),
-				result.getLoc()));
-			LOG.info("report: " + report);
-			reporter.flush();
+			try {
+				CKReport report = new CK().calculate(dirName);
+				report.all().forEach(result -> 
+				reporter.write(result.getFile(),
+					result.getClassName(),
+					result.getType(),
+					result.getCbo(),
+					result.getWmc(),
+					result.getDit(),
+					result.getNoc(),
+					result.getRfc(),
+					result.getLcom(),
+					result.getNom(),
+					result.getNopm(), 
+					result.getNosm(),
+					result.getNof(),
+					result.getNopf(), 
+					result.getNosf(),
+					result.getNosi(),
+					result.getLoc()));
+				LOG.info("report: " + report);
+				reporter.flush();
+			} catch (Exception e) {
+				LOG.error("Can't handle " + dirName + " due to " + e.getMessage(), e);
+			}
 		});
 //		runCKJM(reporter);
 
