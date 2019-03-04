@@ -20,6 +20,10 @@ import org.apache.commons.csv.CSVPrinter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.mauricioaniche.ck.CK;
+import com.github.mauricioaniche.ck.CKNumber;
+import com.github.mauricioaniche.ck.CKReport;
+
 import gr.spinellis.ckjm.CkjmOutputHandler;
 import gr.spinellis.ckjm.ClassMetrics;
 import gr.spinellis.ckjm.MetricsFilter;
@@ -71,6 +75,15 @@ public class ClassMetricsGatherer {
 
 	}
 
+	static class CKMetricsCSVReporter extends CSVReporter {
+
+		public CKMetricsCSVReporter() throws IOException {
+			super(new CSVPrinter(Files.newBufferedWriter(Paths.get("class-metrics.csv")),
+					CSVFormat.DEFAULT.withHeader("file,class,type,cbo,wmc,dit,noc,rfc,lcom,nom,nopm,nosm,nof,nopf,nosf,nosi,loc".split(",")).withDelimiter(';')));
+		}
+
+	}
+
 	static String[] getHeaders() {
 		List<String> headers = new ArrayList(Arrays.asList("fileName", "className", "simpleClassName", "gatherer"));
 		headers.addAll(metrics.stream().map(x -> x.name()).collect(Collectors.toList()));
@@ -78,17 +91,49 @@ public class ClassMetricsGatherer {
 	}
 
 	public static void main(String[] args) throws IOException {
-		List<Path> files = java.nio.file.Files.walk(java.nio.file.Paths.get("."))
-				.filter(p -> p.toFile().getName().endsWith(".java") || p.toFile().getName().endsWith(".class"))
-				.collect(Collectors.toList());
-		CSVReporter reporter = new MetricsCSVReporter();
-		files.parallelStream().forEach(f -> reportMetrics(f.toFile().getAbsolutePath(), reporter));
+
+		List<String> srcDirs = java.nio.file.Files.walk(java.nio.file.Paths.get(".")).filter(p->p.toFile().getAbsolutePath().endsWith("src")).map(x->x.getParent().toFile().getAbsolutePath()).collect(Collectors.toList());
+		CSVReporter reporter = new CKMetricsCSVReporter();
+		srcDirs.parallelStream().forEach(dirName -> {
+			CKReport report = new CK().calculate(dirName);
+			report.all().forEach(result -> 
+			reporter.write(result.getFile(),
+				result.getClassName(),
+				result.getType(),
+				result.getCbo(),
+				result.getWmc(),
+				result.getDit(),
+				result.getNoc(),
+				result.getRfc(),
+				result.getLcom(),
+				result.getNom(),
+				result.getNopm(), 
+				result.getNosm(),
+				result.getNof(),
+				result.getNopf(), 
+				result.getNosf(),
+				result.getNosi(),
+				result.getLoc()));
+			LOG.info("report: " + report);
+			reporter.flush();
+		});
+//		runCKJM(reporter);
+
+		
 		reporter.close();
 
 	}
 
+	private static void runCKJM(CSVReporter reporter) throws IOException {
+		List<Path> files = java.nio.file.Files.walk(java.nio.file.Paths.get("."))
+				.filter(p -> p.toFile().getName().endsWith(".java") || p.toFile().getName().endsWith(".class"))
+				.collect(Collectors.toList());
+		files.parallelStream().forEach(f -> reportMetrics(f.toFile().getAbsolutePath(), reporter));
+	}
+
 	public static void reportMetrics(String fileName, CSVReporter reporter) {
-		if (fileName.endsWith(".java") && Boolean.valueOf(System.getProperty("runPMD", "true"))) {
+		Boolean runPMD = Boolean.valueOf(System.getProperty("runPMD", "false"));
+		if (fileName.endsWith(".java") && runPMD) {
 			PMDConfiguration configuration = new PMDConfiguration();
 			configuration.setReportFormat("xml");
 			configuration.setInputPaths("src/main/java");
