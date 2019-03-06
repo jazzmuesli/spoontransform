@@ -83,7 +83,7 @@ public class ResultToCSV {
 			});
 			mockFields.forEach(mockField -> {
 				try {
-					csvPrinter.printRecord(fileName, testClassName, "test", mockField.get("simpleName"), 0,
+					csvPrinter.printRecord(fileName, testClassName, "mockField", mockField.get("simpleName"), 0,
 							mockField.get("typeName"), mockField.get("annotations"));
 				} catch (IOException e) {
 					LOG.error("Failed to handle " + testMap + " due to error: " + e.getMessage(), e);
