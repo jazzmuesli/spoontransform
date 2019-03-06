@@ -63,6 +63,7 @@ public class ResultToCSV {
 			Path fileName = file.toAbsolutePath();
 			List<Map> setupMethods = (List) testMap.getOrDefault("setupMethods", Collections.emptyList());
 			List<Map> testMethods = (List) testMap.getOrDefault("testMethods", Collections.emptyList());
+			List<Map> mockFields = (List) testMap.getOrDefault("mockFields", Collections.emptyList());
 			setupMethods.forEach(setupMethod -> {
 				try {
 					
@@ -76,6 +77,14 @@ public class ResultToCSV {
 				try {
 					csvPrinter.printRecord(fileName, testClassName, "test", setupMethod.get("simpleName"), setupMethod.get("LOC"),
 							setupMethod.get("statementCount"), setupMethod.get("annotations"));
+				} catch (IOException e) {
+					LOG.error("Failed to handle " + testMap + " due to error: " + e.getMessage(), e);
+				}
+			});
+			mockFields.forEach(mockField -> {
+				try {
+					csvPrinter.printRecord(fileName, testClassName, "test", mockField.get("simpleName"), 0,
+							mockField.get("typeName"), mockField.get("annotations"));
 				} catch (IOException e) {
 					LOG.error("Failed to handle " + testMap + " due to error: " + e.getMessage(), e);
 				}
