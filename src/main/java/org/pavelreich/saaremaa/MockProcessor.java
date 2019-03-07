@@ -1,44 +1,55 @@
 package org.pavelreich.saaremaa;
 
-import java.util.Map;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import spoon.processing.AbstractProcessor;
 import spoon.reflect.code.CtAssignment;
 import spoon.reflect.code.CtExpression;
 import spoon.reflect.code.CtFieldRead;
 import spoon.reflect.code.CtInvocation;
+import spoon.reflect.declaration.CtClass;
 import spoon.reflect.declaration.CtElement;
+import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.declaration.CtNamedElement;
 import spoon.reflect.reference.CtTypeReference;
 
+/**
+ * process mock instantiation in methods
+ * @author preich
+ *
+ */
 class MockProcessor extends AbstractProcessor<CtInvocation> {
     private static final Logger LOG = LoggerFactory.getLogger(ObjectCreationOccurence.class);
-    private final Map<String, ObjectCreationOccurence> objectsCreated;
+    private final ObjectCreationContainer objectsCreated;
 
-    public MockProcessor(Map<String, ObjectCreationOccurence> objectsCreated) {
+    public MockProcessor(ObjectCreationContainer objectsCreated) {
         this.objectsCreated = objectsCreated;
     }
 
     @Override
     public void process(CtInvocation element) {
-        processMockInvocation(objectsCreated, element, "org.mockito.Mockito.mock", InstanceType.MOCKITO);
-        processMockInvocation(objectsCreated, element, "PowerMockito.mock", InstanceType.POWERMOCK);
+        processMockInvocation(element, "org.mockito.Mockito.mock", InstanceType.MOCKITO);
+        processMockInvocation(element, "PowerMockito.mock", InstanceType.POWERMOCK);
     }
 
-    private void processMockInvocation(final Map<String, ObjectCreationOccurence> objectsCreated,
-                                       CtInvocation element, String mockMask, InstanceType mockType) {
+    private void processMockInvocation(CtInvocation element, String mockMask, InstanceType mockType) {
         if (element.toString().contains(mockMask)) {
             @SuppressWarnings("unused")
             String elType = element.getTarget().toString();
             try {
+            	CtMethod method = element.getParent(CtMethod.class);
+            	CtClass klasse = element.getParent(CtClass.class);
                 String simpleName = getSimpleName(element);
+                
                 CtExpression type = ((CtFieldRead) element.getArguments().get(0)).getTarget();
                 Set<CtTypeReference<?>> x = type.getReferencedTypes();
                 CtTypeReference<?> mock = x.iterator().next();
-                objectsCreated.put(simpleName, new ObjectCreationOccurence(mock, element, mockType));
+                ObjectCreator objectCreator = new ObjectCreator(klasse, method);
+				ObjectCreationOccurence objectCreationOccurence = new ObjectCreationOccurence(mock, element, mockType);
+				objectsCreated.put(objectCreator, objectCreationOccurence);
                 LOG.info("invocation [{}]={} args={} annotations={}", element.getClass(), element,
                         element.getArguments(), element.getAnnotations());
             } catch (Throwable e) {
@@ -47,6 +58,7 @@ class MockProcessor extends AbstractProcessor<CtInvocation> {
             }
         }
     }
+
 
     private String getSimpleName(CtInvocation element) {
         if (element instanceof CtAssignment) {

@@ -1,7 +1,13 @@
 package org.pavelreich.saaremaa;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import spoon.reflect.code.CtInvocation;
+import spoon.reflect.code.CtLocalVariable;
 import spoon.reflect.cu.position.NoSourcePosition;
 import spoon.reflect.declaration.CtElement;
 import spoon.reflect.reference.CtTypeReference;
@@ -42,8 +48,24 @@ class ObjectCreationOccurence {
         }
     }
 
+    public String getName() {
+    	if (element instanceof CtInvocation) {
+    		CtLocalVariable x = element.getParent(CtLocalVariable.class);
+    		if (x != null) {
+    			return x.getSimpleName();
+    		}
+    	}
+    	return "unknown";
+    }
     @Override
     public String toString() {
         return "[type=" + typeRef + ", element.position=" + element.getPosition() + "]";
     }
+
+	public Map<String,Object> toJSON() {
+		Map<String, Object> map = new HashMap();
+		map.put("name", getName());
+		map.put("type", typeRef.getTypeDeclaration().getQualifiedName());
+		return map;
+	}
 }

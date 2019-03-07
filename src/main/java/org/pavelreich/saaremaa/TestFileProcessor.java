@@ -6,6 +6,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.pavelreich.saaremaa.TestFileProcessor.MyClass;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +23,8 @@ import spoon.reflect.code.CtInvocation;
 import spoon.reflect.code.CtStatement;
 import spoon.reflect.declaration.*;
 import spoon.reflect.reference.CtExecutableReference;
+import spoon.reflect.visitor.CtAbstractVisitor;
+import spoon.reflect.visitor.CtVisitor;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -49,7 +52,13 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
 
     private List<MyClass> elements = new CopyOnWriteArrayList<>();
 
-    public List<MyClass> getElements() {
+	private ObjectCreationContainer objectsCreated;
+
+    public TestFileProcessor(ObjectCreationContainer objectsCreated) {
+    	this.objectsCreated=objectsCreated;
+	}
+
+	public List<MyClass> getElements() {
         return elements;
     }
 
@@ -78,7 +87,13 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
         launcher.buildModel();
 
         CtModel model = launcher.getModel();
-        TestFileProcessor processor = new TestFileProcessor();
+        
+        ObjectCreationContainer objectsCreated = new ObjectCreationContainer();
+        TestFileProcessor processor = new TestFileProcessor(objectsCreated);
+		model.processWith(new MockProcessor(objectsCreated));
+		model.processWith(new AnnotatedMockProcessor(objectsCreated));
+		model.processWith(new ObjectInstantiationProcessor(objectsCreated));
+		// order matters and it's bad :(
         model.processWith(processor);
         Gson gson = new GsonBuilder().setPrettyPrinting().create();
         String json = gson.toJson(processor.getElements().stream().map(x->x.toJSON()).collect(Collectors.toList()));
@@ -94,7 +109,7 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
 
 
 
-    static class MyClass {
+     class MyClass {
 
         private final CtClass ctClass;
         private Map<String, MyMethod> methods = new HashMap<>();
@@ -117,13 +132,13 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
             }
             try {
                 Set<CtMethod> allMethods = ctClass.getAllMethods();
-                this.methods = allMethods.stream().map(x -> new MyMethod(x)).filter(p -> p.isPublicVoidMethod()).collect(Collectors.toMap(e -> e.simpleName, e -> e));
+                this.methods = allMethods.stream().map(x -> new MyMethod(this,x)).filter(p -> p.isPublicVoidMethod()).collect(Collectors.toMap(e -> e.simpleName, e -> e));
             } catch (Exception e) {
                 LOG.error("Error occured for methods of class:" + ctClass + ", error: " + e.getMessage(), e);
             }
             try {
                 List<CtField> fields = ctClass.getFields();
-                this.fields = fields.stream().map(x -> new MyField(x)).collect(Collectors.toList());
+                this.fields = fields.stream().map(x -> new MyField(this,x)).collect(Collectors.toList());
             } catch (Exception e) {
                 LOG.error("Error occured for fields of class:" + ctClass + ", error: " + e.getMessage(), e);
             }
@@ -163,15 +178,17 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
         }
     }
 
-    static class MyField {
+     class MyField {
 
         private final CtField ctField;
         private final Set<String> annotations;
         private final String simpleName;
         private final String typeName;
         private final CtExpression defaultExpression;
+		private MyClass myClass;
 
-        public MyField(CtField ctField) {
+        public MyField(MyClass myClass, CtField ctField) {
+        	this.myClass = myClass;
             this.ctField = ctField;
             this.simpleName = ctField.getSimpleName();
             this.annotations = getAnnotations(ctField);
@@ -212,13 +229,15 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
         }
     }
 
-    static class MyMethod {
+     class MyMethod {
 
         final Set<String> annotations;
         final String simpleName;
         final CtMethod method;
+		private MyClass myClass;
 
-        public MyMethod(CtMethod e) {
+        public MyMethod(MyClass myClass, CtMethod e) {
+        	this.myClass = myClass;
             this.simpleName = e.getSimpleName();
             this.annotations = getAnnotations(e);
             this.method = e;
@@ -231,6 +250,11 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
         	map.put("annotations", annotations);
         	map.put("LOC", lineCount());
         	map.put("statementCount", statementCount());
+        	ObjectCreator key = new ObjectCreator(this.method.getParent(CtClass.class),this.method);
+			Collection<ObjectCreationOccurence> creations = objectsCreated.get(key);
+			List mocks = creations.stream().map(x -> x.toJSON()).collect(Collectors.toList());
+        	map.put("mocks", mocks);
+
         	return map;
 		}
 

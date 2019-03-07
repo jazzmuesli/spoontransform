@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
@@ -34,6 +35,7 @@ public class MockTesting {
 	@Test
 	public void test() {
 		List<String> localVarMockList = mock(List.class);
+		Map<String,Number> localVarMockMap = mock(Map.class);
 		localVarMockList.add("xs");
 		fieldMockList.add("two");
 		Mockito.when(localVarMockList.toArray()).thenReturn(new String[] { "a" });

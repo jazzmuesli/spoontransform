@@ -22,14 +22,14 @@ public class AnalyseDependencies {
 
 
 
-	public Map<String, ObjectCreationOccurence> run(String path) throws FileNotFoundException {
+	public ObjectCreationContainer run(String path) throws FileNotFoundException {
 		Launcher launcher = new Launcher();
 		SpoonResource resource = SpoonResourceHelper.createResource(new File(path));
 		launcher.addInputResource(resource);
 		launcher.buildModel();
 
 		CtModel model = launcher.getModel();
-		final Map<String, ObjectCreationOccurence> objectsCreated = new HashMap();
+		ObjectCreationContainer objectsCreated = new ObjectCreationContainer();
 		model.processWith(new MockProcessor(objectsCreated));
 		model.processWith(new AnnotatedMockProcessor(objectsCreated));
 		model.processWith(new ObjectInstantiationProcessor(objectsCreated));
@@ -70,20 +70,21 @@ public class AnalyseDependencies {
 		LOG.info("path: " + path);
 
 		try {
-			Map<String, ObjectCreationOccurence> mocks = new AnalyseDependencies().run(path.toFile().getAbsolutePath());
-			mocks.entrySet().forEach(e -> {
-				try {
-					ObjectCreationOccurence mockOc = e.getValue();
-					fWrite(fw,e.getKey() + ";" + mockOc.toCSV() + ";" + path.toFile().getAbsolutePath() + "\n");
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-			});
-			GroumRunner groumRunner = new GroumRunner();
-			if (!mocks.isEmpty() && Boolean.valueOf(System.getProperty("enable.groom","false"))) {
-				mocks.values().stream().map(x -> x.getAbsolutePath()).filter(p -> p != null).forEach(x -> groumRunner.runGroom(x));
-			}
+			ObjectCreationContainer mocks = new AnalyseDependencies().run(path.toFile().getAbsolutePath());
+//			TODO: fix
+//			mocks.entrySet().forEach(e -> {
+//				try {
+//					ObjectCreationOccurence mockOc = e.getValue();
+//					fWrite(fw,e.getKey() + ";" + mockOc.toCSV() + ";" + path.toFile().getAbsolutePath() + "\n");
+//				} catch (IOException e1) {
+//					// TODO Auto-generated catch block
+//					e1.printStackTrace();
+//				}
+//			});
+//			GroumRunner groumRunner = new GroumRunner();
+//			if (!mocks.isEmpty() && Boolean.valueOf(System.getProperty("enable.groom","false"))) {
+//				mocks.values().stream().map(x -> x.getAbsolutePath()).filter(p -> p != null).forEach(x -> groumRunner.runGroom(x));
+//			}
 			fwFlush(fw);
 		} catch (Throwable e) {
 			LOG.error(e.getMessage(), e);
