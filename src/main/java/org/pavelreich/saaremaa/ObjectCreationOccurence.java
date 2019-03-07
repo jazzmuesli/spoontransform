@@ -72,14 +72,18 @@ class ObjectCreationOccurence {
     }
     @Override
     public String toString() {
-        return "[type=" + typeRef + ", element.position=" + element.getPosition() + "]";
+        return "[name=" + getName()+ ", type=" + this.instanceType + ", class=" + getType() + ", element.position=" + element.getPosition() + "]";
     }
 
 	public Map<String,Object> toJSON() {
 		Map<String, Object> map = new HashMap();
 		map.put("name", getName());
-		map.put("class", typeRef != null && typeRef.getTypeDeclaration() != null ? typeRef.getTypeDeclaration().getQualifiedName() : "unknown");
+		map.put("class", getType());
 		map.put("type", this.instanceType);
 		return map;
+	}
+
+	private Object getType() {
+		return typeRef != null && typeRef.getTypeDeclaration() != null ? typeRef.getTypeDeclaration().getQualifiedName() : "unknown";
 	}
 }

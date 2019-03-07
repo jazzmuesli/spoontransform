@@ -7,6 +7,7 @@ import spoon.reflect.code.CtConstructorCall;
 import spoon.reflect.code.CtVariableRead;
 import spoon.reflect.declaration.CtClass;
 import spoon.reflect.declaration.CtElement;
+import spoon.reflect.declaration.CtMethod;
 import spoon.reflect.declaration.CtNamedElement;
 import spoon.reflect.path.CtPath;
 
@@ -30,7 +31,15 @@ class ObjectInstantiationProcessor extends AbstractProcessor<CtConstructorCall> 
         if (parent instanceof CtNamedElement) {
             name = ((CtNamedElement) parent).getSimpleName();
         }
-        ObjectCreator objectCreator = new ObjectCreator(element.getParent(CtClass.class));
+        CtMethod method = element.getParent(CtMethod.class);
+        CtClass parentClass = element.getParent(CtClass.class);
+        ObjectCreator objectCreator;
+        if (method != null) {
+        	objectCreator = new ObjectCreator(parentClass, method);
+        } else {
+        	objectCreator = new ObjectCreator(parentClass);
+        }
+		
 		ObjectCreationOccurence objectCreationOccurence = new ObjectCreationOccurence(element.getType(), element, InstanceType.REAL);
 		objectsCreated.put(objectCreator, objectCreationOccurence);
         if (!element.getArguments().isEmpty() && element.getArguments().get(0) instanceof CtVariableRead) {
