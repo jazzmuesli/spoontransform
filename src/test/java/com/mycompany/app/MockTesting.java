@@ -34,6 +34,7 @@ public class MockTesting {
 	@Before
 	public void setUp() {
 		fieldMockList2 = mock(CopyOnWriteArrayList.class);
+		//Banana x = mock(Banana.class);
 	}
 
 	@Test

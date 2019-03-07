@@ -83,7 +83,13 @@ class ObjectCreationOccurence {
 		return map;
 	}
 
-	private Object getType() {
-		return typeRef != null && typeRef.getTypeDeclaration() != null ? typeRef.getTypeDeclaration().getQualifiedName() : "unknown";
+	private String getType() {
+		if(typeRef != null && typeRef.getTypeDeclaration() != null) {
+			return typeRef.getTypeDeclaration().getQualifiedName();
+		}
+		if (typeRef != null) {
+			return typeRef.getQualifiedName();
+		}
+		return "unknown";
 	}
 }
