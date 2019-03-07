@@ -129,8 +129,8 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
             }
         }
 
-        HashMap toJSON() {
-        	HashMap map = new HashMap();
+        Map<String, Object> toJSON() {
+        	Map<String,Object> map = new HashMap<String, Object>();
         	map.put("simpleName", ctClass.getQualifiedName());
         	map.put("annotations", annotations);
         	map.put("annotationsMap", annotationsMap);
