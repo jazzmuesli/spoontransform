@@ -73,10 +73,10 @@ public class ResultToCSV {
 					LOG.error("Failed to handle " + testMap + " due to error: " + e.getMessage(), e);
 				}
 			});
-			testMethods.forEach(setupMethod -> {
+			testMethods.forEach(testMethod -> {
 				try {
-					csvPrinter.printRecord(fileName, testClassName, "test", setupMethod.get("simpleName"), setupMethod.get("LOC"),
-							setupMethod.get("statementCount"), setupMethod.get("annotations"));
+					csvPrinter.printRecord(fileName, testClassName, "test", testMethod.get("simpleName"), testMethod.get("LOC"),
+							testMethod.get("statementCount"), testMethod.get("annotations"));
 				} catch (IOException e) {
 					LOG.error("Failed to handle " + testMap + " due to error: " + e.getMessage(), e);
 				}

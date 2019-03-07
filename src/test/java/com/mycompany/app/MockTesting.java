@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
@@ -28,8 +29,11 @@ public class MockTesting {
 	@Mock
 	private List<String> fieldMockList;
 
+	private List<String> fieldMockList2;
+
 	@Before
 	public void setUp() {
+		fieldMockList2 = mock(CopyOnWriteArrayList.class);
 	}
 
 	@Test

@@ -6,7 +6,10 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import spoon.reflect.code.CtAssignment;
 import spoon.reflect.code.CtConstructorCall;
+import spoon.reflect.code.CtFieldAccess;
+import spoon.reflect.code.CtFieldWrite;
 import spoon.reflect.code.CtInvocation;
 import spoon.reflect.code.CtLocalVariable;
 import spoon.reflect.cu.position.NoSourcePosition;
@@ -56,6 +59,10 @@ class ObjectCreationOccurence {
     		CtLocalVariable x = element.getParent(CtLocalVariable.class);
     		if (x != null) {
     			return x.getSimpleName();
+    		}
+    		CtAssignment a = element.getParent(CtAssignment.class);
+    		if (a != null && a.getAssigned() instanceof CtFieldAccess) {
+    			return ((CtFieldAccess)a.getAssigned()).getVariable().getSimpleName();
     		}
     	}
     	if (element instanceof CtField) {
