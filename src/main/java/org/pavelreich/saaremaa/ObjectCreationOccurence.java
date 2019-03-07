@@ -71,7 +71,7 @@ class ObjectCreationOccurence {
 	public Map<String,Object> toJSON() {
 		Map<String, Object> map = new HashMap();
 		map.put("name", getName());
-		map.put("class", typeRef.getTypeDeclaration().getQualifiedName());
+		map.put("class", typeRef != null && typeRef.getTypeDeclaration() != null ? typeRef.getTypeDeclaration().getQualifiedName() : "unknown");
 		map.put("type", this.instanceType);
 		return map;
 	}
