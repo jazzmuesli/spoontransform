@@ -6,10 +6,13 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import spoon.reflect.code.CtConstructorCall;
 import spoon.reflect.code.CtInvocation;
 import spoon.reflect.code.CtLocalVariable;
 import spoon.reflect.cu.position.NoSourcePosition;
+import spoon.reflect.declaration.CtConstructor;
 import spoon.reflect.declaration.CtElement;
+import spoon.reflect.declaration.CtField;
 import spoon.reflect.reference.CtTypeReference;
 
 /**
@@ -49,11 +52,14 @@ class ObjectCreationOccurence {
     }
 
     public String getName() {
-    	if (element instanceof CtInvocation) {
+    	if (element instanceof CtInvocation || element instanceof CtConstructorCall) {
     		CtLocalVariable x = element.getParent(CtLocalVariable.class);
     		if (x != null) {
     			return x.getSimpleName();
     		}
+    	}
+    	if (element instanceof CtField) {
+    		return ((CtField) element).getSimpleName();
     	}
     	return "unknown";
     }
@@ -65,7 +71,8 @@ class ObjectCreationOccurence {
 	public Map<String,Object> toJSON() {
 		Map<String, Object> map = new HashMap();
 		map.put("name", getName());
-		map.put("type", typeRef.getTypeDeclaration().getQualifiedName());
+		map.put("class", typeRef.getTypeDeclaration().getQualifiedName());
+		map.put("type", this.instanceType);
 		return map;
 	}
 }

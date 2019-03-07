@@ -151,7 +151,8 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
         	map.put("annotationsMap", annotationsMap);
         	map.put("testMethods", getTestMethods().stream().map(x -> x.toJSON()).collect(Collectors.toList()));
         	map.put("setupMethods", getSetupMethods().stream().map(x -> x.toJSON()).collect(Collectors.toList()));
-        	map.put("mockFields", getMockFields().stream().map(x -> x.toJSON()).collect(Collectors.toList()));
+        	Collection<ObjectCreationOccurence> mockFields = objectsCreated.get(new ObjectCreator(ctClass));
+        	map.put("mockFields", mockFields.stream().map(x -> x.toJSON()).collect(Collectors.toList()));
         	map.put("fields", fields.stream().map(x -> x.toJSON()).collect(Collectors.toList()));
         	return map;
         }
@@ -166,6 +167,7 @@ public class TestFileProcessor extends AbstractProcessor<CtClass> {
             return this.methods.values().stream().filter(p->p.isSetup()).collect(Collectors.toList());
         }
 
+        @Deprecated
         List<MyField> getMockFields() {
             return this.fields.stream().filter(p->!p.getMockType().isEmpty()).collect(Collectors.toList());
         }
