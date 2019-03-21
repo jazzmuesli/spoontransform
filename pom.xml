@@ -29,9 +29,22 @@
 			<id>jp.mzw.mvn-repo</id>
 			<url>http://mvn-repo.mzw.jp/</url>
 		</repository>
+		<repository>
+			<id>geomajas</id>
+			<url>http://maven.geomajas.org/</url>
+		</repository>
+		
 	</repositories>
 
+
 	<dependencies>
+	<!-- https://mvnrepository.com/artifact/org.eclipse/org.eclipse.jdt.core -->
+  <dependency>
+      <groupId>org.eclipse.jdt</groupId>
+      <artifactId>org.eclipse.jdt.core</artifactId>
+      <version>3.12.2</version>
+    </dependency>
+    
 		<dependency>
 			<groupId>com.github.mauricioaniche</groupId>
 			<artifactId>ck</artifactId>
