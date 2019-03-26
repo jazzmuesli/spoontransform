@@ -38,11 +38,15 @@
 
 
 	<dependencies>
-		<dependency>
-			<groupId>joinery</groupId>
-			<artifactId>joinery-dataframe</artifactId>
-			<version>1.9</version>
-		</dependency>
+
+	<!-- https://mvnrepository.com/artifact/org.apache.spark/spark-sql -->
+<dependency>
+    <groupId>org.apache.spark</groupId>
+    <artifactId>spark-sql_2.12</artifactId>
+    <version>2.4.0</version>
+</dependency>
+
+
 		<!-- https://mvnrepository.com/artifact/org.gmetrics/GMetrics -->
 		<dependency>
 			<groupId>org.gmetrics</groupId>
