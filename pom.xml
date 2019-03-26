@@ -33,18 +33,30 @@
 			<id>geomajas</id>
 			<url>http://maven.geomajas.org/</url>
 		</repository>
-		
+
 	</repositories>
 
 
 	<dependencies>
-	<!-- https://mvnrepository.com/artifact/org.eclipse/org.eclipse.jdt.core -->
-  <dependency>
-      <groupId>org.eclipse.jdt</groupId>
-      <artifactId>org.eclipse.jdt.core</artifactId>
-      <version>3.12.2</version>
-    </dependency>
-    
+		<dependency>
+			<groupId>joinery</groupId>
+			<artifactId>joinery-dataframe</artifactId>
+			<version>1.9</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.gmetrics/GMetrics -->
+		<dependency>
+			<groupId>org.gmetrics</groupId>
+			<artifactId>GMetrics</artifactId>
+			<version>0.7</version>
+		</dependency>
+
+		<!-- https://mvnrepository.com/artifact/org.eclipse/org.eclipse.jdt.core -->
+		<dependency>
+			<groupId>org.eclipse.jdt</groupId>
+			<artifactId>org.eclipse.jdt.core</artifactId>
+			<version>3.12.2</version>
+		</dependency>
+
 		<dependency>
 			<groupId>com.github.mauricioaniche</groupId>
 			<artifactId>ck</artifactId>
