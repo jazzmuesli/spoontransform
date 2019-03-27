@@ -50,7 +50,7 @@ public class ClassNameAnalysis {
 		}
 		*/
 		
-		run();
+		run(args[0]);
 	}
 
 	private static List<String> extractNGrams(ClassName last) {
@@ -65,8 +65,8 @@ public class ClassNameAnalysis {
 		
 		return ret.stream().map(x -> x.stream().collect(Collectors.joining(""))).collect(Collectors.toList());
 	}
-	private static void run() throws IOException {
-		CSVParser parser = CSVParser.parse(new File("/Users/preich/Documents/git/phdp/class-metrics.csv"),
+	private static void run(String dir) throws IOException {
+		CSVParser parser = CSVParser.parse(new File(dir+"class-metrics.csv"),
 				Charset.defaultCharset(), CSVFormat.DEFAULT.withFirstRecordAsHeader().withDelimiter(';'));
 		Set<ClassName> classNames = new HashSet();
 		parser.forEach(x -> classNames.add(new ClassName(x.get("class"), x.get("file"))));
