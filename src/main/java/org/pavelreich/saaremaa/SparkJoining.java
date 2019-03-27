@@ -18,10 +18,9 @@ public class SparkJoining {
 	};
 
 	public static void main(String[] args) {
+		String dir = args[0];
 
 		SparkSession spark = SparkSession.builder().appName("CSV to Dataset").master("local[*]").getOrCreate();
-		// Reads a CSV file with header, called books.csv, stores it in a dataframe
-		String dir = args[0];//"/Users/preich/Documents/git/phdp/";
 		Dataset<Row> mocks = spark.read().format("csv").option("delimiter", ";").option("header", "true")
 				.load(dir + "results.csv").drop("LOC");
 
@@ -32,12 +31,14 @@ public class SparkJoining {
 		metrics = metrics.withColumn("project", callUDF("extractProject", metrics.col("file")));
 		mocks = mocks.withColumn("project", callUDF("extractProject", mocks.col("fileName")));
 		mocks = mocks.withColumn("class", mocks.col("mockClass"));
-		Dataset<Row> ret = mocks.join(metrics, 		scala.collection.JavaConverters.asScalaIteratorConverter(
-		        Arrays.asList("project", "class").iterator()).asScala().toSeq(),"outer");
+		Dataset<Row> ret = mocks.join(
+				metrics, scala.collection.JavaConverters
+						.asScalaIteratorConverter(Arrays.asList("project", "class").iterator()).asScala().toSeq(),
+				"inner");
 		ret.show();
-		    
+
 		System.out.println("count: " + ret.count());
-		ret.toJavaRDD().saveAsTextFile(dir+"merged.csv");
+		ret.toJavaRDD().coalesce(1).saveAsTextFile(dir + "merged.csv");
 
 	}
 }
