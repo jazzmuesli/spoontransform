@@ -38,7 +38,6 @@ public class SparkJoining {
 		ret.show();
 
 		System.out.println("count: " + ret.count());
-		ret.toJavaRDD().coalesce(1).saveAsTextFile(dir + "merged.csv");
-
+		ret.repartition(1).write().option("header", "true").csv(dir+"merged.csv");
 	}
 }

@@ -1,7 +1,10 @@
 package org.pavelreich.saaremaa;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
+import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 
 /**
@@ -13,6 +16,11 @@ import org.apache.commons.csv.CSVPrinter;
 public class CSVReporter {
 
 	private CSVPrinter csvPrinter;
+
+	public CSVReporter(String fname, String... fields) throws IOException {
+		this(new CSVPrinter(Files.newBufferedWriter(Paths.get(fname)),
+				CSVFormat.DEFAULT.withHeader(fields).withDelimiter(';')));
+	}
 
 	public CSVReporter(CSVPrinter csvPrinter) {
 		this.csvPrinter = csvPrinter;
